@@ -8,16 +8,21 @@ public class TransactionEndEvent extends Event {
 
 	Transaction transaction;
 	Location location;
+	Double startTime;
+	Double endTime;
 	
-	public TransactionEndEvent(double timestamp, Transaction transaction, Location location) {
+	public TransactionEndEvent(double startTime, double timestamp, Transaction transaction, Location location) {
 		super(timestamp);
 		this.transaction = transaction;
 		this.location = location;
+		this.startTime = startTime;
+		this.endTime = timestamp;
 		setPriority(Event.EventType.TRANSACTION_END);
 	}
 	
 	@Override
 	public void handleEvent() {
+		// TODO: Record metrics
 		TransactionScheduler.getInstance().endTransaction(transaction, location);
 	}
 }

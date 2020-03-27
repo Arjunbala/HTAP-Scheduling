@@ -12,6 +12,7 @@ public class Transaction {
 	private Double mCPURunningTimeEstimateMs; // Measured runtime estimation on
 												// CPU
 	private boolean mIsOlap; // whether this transaction is read-only
+	private Double mOutputSize; // valid only for OLAP
 	private List<Tuple> mReadSet; // read set for this transaction
 	private List<Tuple> mWriteSet; // write set for this transaction
 
@@ -33,6 +34,7 @@ public class Transaction {
 		// Init empty read and write sets
 		mReadSet = new ArrayList<Tuple>();
 		mWriteSet = new ArrayList<Tuple>();
+		mOutputSize = 0.0;
 	}
 	
 	public Double getCPUExecutionTime() {
@@ -53,6 +55,18 @@ public class Transaction {
 	
 	public Integer getTransactionId() {
 		return mTransactionId;
+	}
+	
+	public List<Tuple> getReadSet() {
+		return mReadSet;
+	}
+	
+	public List<Tuple> getWriteSet() {
+		return mWriteSet;
+	}
+	
+	public Double getOutputSize() {
+		return mOutputSize;
 	}
 
 	/**
@@ -81,6 +95,10 @@ public class Transaction {
 			return true;
 		}
 		return false;
+	}
+	
+	public void setOutputSize(Double outputSizeKB) {
+		mOutputSize = outputSizeKB;
 	}
 
 	/**

@@ -9,6 +9,7 @@ import com.ngdb.htapscheduling.database.Location;
 import com.ngdb.htapscheduling.database.Transaction;
 import com.ngdb.htapscheduling.database.TransactionExecutionContext;
 import com.ngdb.htapscheduling.events.EventQueue;
+import com.ngdb.htapscheduling.events.TransactionEndEvent;
 import com.ngdb.htapscheduling.events.TransactionStartEvent;
 import com.ngdb.htapscheduling.scheduling.policy.OrderingPolicy;
 import com.ngdb.htapscheduling.scheduling.policy.TransactionOrdering;
@@ -82,7 +83,30 @@ public class TransactionScheduler {
 	// Transaction execution management APIs below
 	public void startTransaction(Transaction transaction, Location location) {
 		Integer status = executor.startTransactionExecution(transaction, location);
-		// TODO: Handle status codes from executor
+		if(status == 0) {
+			// successful, enqueue end transaction event
+			Double endTime = executor.getEndTime(transaction, location);
+			EventQueue.getInstance().enqueueEvent(new TransactionEndEvent(
+					Simulation.getInstance().getTime(), endTime, transaction, location));
+		} else if (status == 1) {
+			// cpu currently unavailable, schedule start transaction for when CPU becomes available
+			EventQueue.getInstance()
+			.enqueueEvent(new TransactionStartEvent(executor.getCPUNextAvailableTime(),
+					transaction,
+					location));
+		} else if (status == 2) {
+			// GPU currently unavailable, schedule start transaction for when GPU becomes available
+			EventQueue.getInstance()
+			.enqueueEvent(new TransactionStartEvent(executor.getGPUNextAvailableTime(location.getId()),
+					transaction,
+					location));
+		} else if (status == 3) {
+			// Read/write set conflict, find out earliest time when all locks will be available
+			EventQueue.getInstance()
+			.enqueueEvent(new TransactionStartEvent(executor.getEarliestLockAvailability(transaction),
+					transaction,
+					location));
+		}
 	}
 
 	public void endTransaction(Transaction transaction, Location location) {

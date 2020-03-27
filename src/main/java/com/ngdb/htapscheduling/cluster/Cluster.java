@@ -11,7 +11,7 @@ import com.ngdb.htapscheduling.database.Tuple;
 public class Cluster {
 	private Integer mNumCPUCores; // Number of CPU cores in the cluster
 	private Integer mNumGPUSlots; // Number of GPUs in this server
-	private WorkingSet mCPUWorkingSet; // CPU Working Set - assume infinite memory here
+	public WorkingSet mCPUWorkingSet; // CPU Working Set - assume infinite memory here
 	private Map<Integer, WorkingSet> mGPUWorkingSet; // Mapping between GPU and its working set
 	private Map<Integer, Double> mAvailableGPUMemoryKB; // Mapping between GPU and available memory
 	
@@ -72,5 +72,17 @@ public class Cluster {
 			return true;
 		}
 		return false;
+	}
+	
+	public boolean doesGPUHaveLatestTupleVersion(Integer gpuID, Tuple t, Integer targetVersion) {
+		WorkingSet gpuWorkingSet = mGPUWorkingSet.get(gpuID);
+		if(gpuWorkingSet.getTupleVersion(t) == targetVersion) {
+			return true;
+		}
+		return false;
+	}
+	
+	public Integer latestTupleVersion(Tuple t) {
+		return mCPUWorkingSet.getTupleVersion(t);
 	}
 }
