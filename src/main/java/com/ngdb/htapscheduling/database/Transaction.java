@@ -6,6 +6,7 @@ import java.util.List;
 public class Transaction {
 
 	private Integer mTransactionId; // Unique XID assigned to each transaction
+	private Double mAcceptStamp; // Time when transaction arrived
 	private Double mGPURunningTimeEstimateMs; // Measured runtime estimation on
 												// GPU
 	private Double mCPURunningTimeEstimateMs; // Measured runtime estimation on
@@ -22,15 +23,28 @@ public class Transaction {
 	 * @param cpuRunningTimeEstimate
 	 * @param isOlap
 	 */
-	public Transaction(Integer trxId, Double gpuRunningTimeEstimateMs,
+	public Transaction(Integer trxId, Double acceptStamp, Double gpuRunningTimeEstimateMs,
 			Double cpuRunningTimeEstimateMs, boolean isOlap) {
 		mTransactionId = trxId;
+		mAcceptStamp = acceptStamp;
 		mGPURunningTimeEstimateMs = gpuRunningTimeEstimateMs;
 		mCPURunningTimeEstimateMs = cpuRunningTimeEstimateMs;
 		mIsOlap = isOlap;
 		// Init empty read and write sets
 		mReadSet = new ArrayList<Tuple>();
 		mWriteSet = new ArrayList<Tuple>();
+	}
+	
+	public Double getCPUExecutionTime() {
+		return mCPURunningTimeEstimateMs;
+	}
+	
+	public Double getGPURunningTime() {
+		return mGPURunningTimeEstimateMs;
+	}
+	
+	public boolean isOlap() {
+		return mIsOlap;
 	}
 
 	/**
@@ -87,5 +101,13 @@ public class Transaction {
 			return true;
 		}
 		return false;
+	}
+	
+	public Double getAcceptStamp() {
+		return mAcceptStamp;
+	}
+	
+	public Integer getTransactionId() {
+		return mTransactionId;
 	}
 }

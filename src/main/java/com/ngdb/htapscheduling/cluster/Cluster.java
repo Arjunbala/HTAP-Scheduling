@@ -32,6 +32,14 @@ public class Cluster {
 		}
 	}
 	
+	public Integer getCores() {
+		return mNumCPUCores;
+	}
+	
+	public Integer getNumGPUSlots() {
+		return mNumGPUSlots;
+	}
+	
 	public boolean addTupleToCPU(Tuple t, Integer version) {
 		return mCPUWorkingSet.addTuple(t, version);
 	}

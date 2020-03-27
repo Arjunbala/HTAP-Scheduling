@@ -1,13 +1,17 @@
 package com.ngdb.htapscheduling;
 
+import com.ngdb.htapscheduling.cluster.Cluster;
+
 public class Simulation {
 
 	private static Simulation sInstance = null; // Holder of singleton instance
 												// of simulation
+	private Cluster cluster;
 	private Double mTimeMs; // Current simulation time
 
 	public Simulation() {
 		mTimeMs = 0.0;
+		cluster = new Cluster(32, 1, 16*1024*1024*1.0);
 	}
 
 	/**
@@ -36,5 +40,9 @@ public class Simulation {
 
 	public static Simulation getInstance() {
 		return sInstance;
+	}
+	
+	public Cluster getCluster() {
+		return cluster;
 	}
 }

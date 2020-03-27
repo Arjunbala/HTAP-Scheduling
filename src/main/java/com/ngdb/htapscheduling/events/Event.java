@@ -11,11 +11,14 @@ public abstract class Event {
 	
 	public enum EventType {
 		HIGH, // Highest priority
+		TRANSACTION_END,
+		TRANSACTION_START,
+		EPOCH_START_EVENT,
 		LOW // Lowest priority
 	}
 	
 	/**
-	 * Constuctor
+	 * Constructor
 	 * @param timestamp
 	 */
 	public Event(double timestamp) {
