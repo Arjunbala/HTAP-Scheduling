@@ -31,7 +31,7 @@ public class GlobalScheduler {
 		return sInstance;
 	}
 
-	public GlobalScheduler(Double epochTime) {
+	private GlobalScheduler(Double epochTime) {
 		this.epochTime = epochTime;
 		transactionList = new ArrayList<Transaction>();
 	}

@@ -46,6 +46,14 @@ public class Transaction {
 	public boolean isOlap() {
 		return mIsOlap;
 	}
+	
+	public Double getAcceptStamp() {
+		return mAcceptStamp;
+	}
+	
+	public Integer getTransactionId() {
+		return mTransactionId;
+	}
 
 	/**
 	 * Add an item to the read set
@@ -101,13 +109,5 @@ public class Transaction {
 			return true;
 		}
 		return false;
-	}
-	
-	public Double getAcceptStamp() {
-		return mAcceptStamp;
-	}
-	
-	public Integer getTransactionId() {
-		return mTransactionId;
 	}
 }

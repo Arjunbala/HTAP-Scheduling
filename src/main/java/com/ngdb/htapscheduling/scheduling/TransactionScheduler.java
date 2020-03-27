@@ -1,6 +1,5 @@
 package com.ngdb.htapscheduling.scheduling;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,7 +8,6 @@ import com.ngdb.htapscheduling.Simulation;
 import com.ngdb.htapscheduling.database.Location;
 import com.ngdb.htapscheduling.database.Transaction;
 import com.ngdb.htapscheduling.database.TransactionExecutionContext;
-import com.ngdb.htapscheduling.database.Tuple;
 import com.ngdb.htapscheduling.events.EventQueue;
 import com.ngdb.htapscheduling.events.TransactionStartEvent;
 import com.ngdb.htapscheduling.scheduling.policy.OrderingPolicy;
@@ -20,17 +18,11 @@ public class TransactionScheduler {
 
 	public static TransactionScheduler sInstance = null;
 	private TransactionOrdering transactionOrderer;
+	private TransactionExecutor executor;
 
 	// Used while deciding initial schedule of transaction
 	Double cpuAvailableTime;
 	Map<Integer, Double> gpuAvailableTime;
-
-	// Used by the transaction execution management
-	Integer numTransactionsUsingCPU;
-	Double earliestNextCPUAvailability;
-	Map<Integer, Double> earliestNextGPUAvailability;
-	List<Tuple> cpuReadLocks;
-	List<Tuple> cpuWriteLocks;
 
 	public static TransactionScheduler getInstance() {
 		if (sInstance == null) {
@@ -49,15 +41,7 @@ public class TransactionScheduler {
 				.getNumGPUSlots(); i++) {
 			gpuAvailableTime.put(i, 0.0);
 		}
-		numTransactionsUsingCPU = 0;
-		earliestNextCPUAvailability = 0.0;
-		earliestNextGPUAvailability = new HashMap<Integer, Double>();
-		for (int i = 0; i < Simulation.getInstance().getCluster()
-				.getNumGPUSlots(); i++) {
-			earliestNextGPUAvailability.put(i, 0.0);
-		}
-		cpuReadLocks = new ArrayList<Tuple>();
-		cpuWriteLocks = new ArrayList<Tuple>();
+		executor = new TransactionExecutor();
 	}
 
 	// Transaction scheduling management strategies below
@@ -66,8 +50,15 @@ public class TransactionScheduler {
 		List<TransactionExecutionContext> orderAndLocationToExecute = transactionOrderer
 				.orderTransactionsByPolicy(transactionList);
 
-		// First schedule CPU transactions
-		// TODO: Think -- optimistic or pessimistic approach?
+		// First schedule CPU transactions optimistically -- executor will take care of concurrency control
+		for (TransactionExecutionContext context : orderAndLocationToExecute) {
+			if (context.getLocation().getDevice().equals("cpu")) {
+				EventQueue.getInstance()
+				.enqueueEvent(new TransactionStartEvent(Simulation.getInstance().getTime(),
+						context.getTransaction(),
+						context.getLocation()));
+			}
+		}
 
 		// Now, schedule GPU transactions, GPU wise
 		for (int i = 0; i < Simulation.getInstance().getCluster()
@@ -90,10 +81,11 @@ public class TransactionScheduler {
 
 	// Transaction execution management APIs below
 	public void startTransaction(Transaction transaction, Location location) {
-		
+		Integer status = executor.startTransactionExecution(transaction, location);
+		// TODO: Handle status codes from executor
 	}
 
 	public void endTransaction(Transaction transaction, Location location) {
-
+		executor.endTransactionExecution(transaction, location);
 	}
 }
