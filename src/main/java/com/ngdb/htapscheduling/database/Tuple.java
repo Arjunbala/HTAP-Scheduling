@@ -1,11 +1,11 @@
-import java.util.BitSet;
 package com.ngdb.htapscheduling.database;
+import java.util.BitSet;
 
 public class Tuple {
 	private String mTableName; // name of table
 	private Integer mId; // index of primary key
 	private Double mMemoryB; // amount of memory occupied by tuple -- will be more convenient if expressed in bytes (Krati)
-	private Integer num_cols; //num of columns in the table
+	private Integer mNumCols; //num of columns in the table
 	private BitSet bitmask; //bitmask for column (max cols=17)
 	/**
 	 * Parameterized constructor
@@ -40,8 +40,7 @@ public class Tuple {
 	}
 	
 	public Double getMemory() {
-		return mMemoryKb;
+		return mMemoryB;
 	}
 
-	public int 
 }
