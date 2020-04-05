@@ -40,7 +40,7 @@ public class Tuple {
 	}
 	
 	public Double getMemory() {
-		return mMemoryB;
+		return mMemoryB/1024.0;
 	}
 
 }

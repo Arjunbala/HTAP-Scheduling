@@ -69,6 +69,9 @@ public class Transaction {
 		return mOutputSize;
 	}
 
+	public void setOutputSize(Double output_size) {
+		mOutputSize = output_size;
+	}
 	/**
 	 * Add an item to the read set
 	 * 

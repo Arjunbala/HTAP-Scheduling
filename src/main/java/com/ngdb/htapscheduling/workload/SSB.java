@@ -60,6 +60,7 @@ public class SSB implements Workload {
 						t.addToReadSet(mTuples.get(i));
 					for (int i=0;i<114550;i++) //adding 'lineorder' table
 						t.addToReadSet(mTuples.get(lo_offset+i));
+					t.setOutputSize(1*11/1024.0);
 				
 				}
 				else if (tx_type==1) {
@@ -71,6 +72,7 @@ public class SSB implements Workload {
 						t.addToReadSet(mTuples.get(part_offset+i));
 					for (int i=0;i<425580;i++) //adding 'lineorder' table
 						t.addToReadSet(mTuples.get(lo_offset+i));
+					t.setOutputSize(280*32/1024.0);
 				
 				}
 				else if (tx_type==2) {
@@ -82,6 +84,7 @@ public class SSB implements Workload {
 						t.addToReadSet(mTuples.get(cust_offset+i));
 					for (int i=0;i<1347435;i++) //adding 'lineorder' table
 						t.addToReadSet(mTuples.get(lo_offset+i));
+					t.setOutputSize(150*47/1024.0);
 				
 				}
 				else if (tx_type==3) {
@@ -95,6 +98,7 @@ public class SSB implements Workload {
 						t.addToReadSet(mTuples.get(part_offset+i));
 					for (int i=0;i<1133502;i++) //adding 'lineorder' table
 						t.addToReadSet(mTuples.get(lo_offset+i));
+					t.setOutputSize(35*32/1024.0);
 				
 				}
 				else {
