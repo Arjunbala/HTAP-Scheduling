@@ -8,3 +8,5 @@ import com.ngdb.htapscheduling.database.TransactionExecutionContext;
 public interface TransactionOrdering {
 	public List<TransactionExecutionContext> orderTransactionsByPolicy(List<Transaction> transactionList);
 }
+
+

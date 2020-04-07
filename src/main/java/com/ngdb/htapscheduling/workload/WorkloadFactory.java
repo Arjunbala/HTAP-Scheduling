@@ -17,6 +17,8 @@ public class WorkloadFactory {
 		switch(workloadType) {
 		case "test":
 			return new TestWorkload();
+		case "ssb":
+			return new SSB();
 		}
 		return null;
 	}
