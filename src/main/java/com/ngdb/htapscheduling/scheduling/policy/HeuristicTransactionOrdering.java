@@ -32,7 +32,33 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 
 	private List<Transaction> getOltpConflicts(
 			List<Transaction> allTransactions) {
-		// TODO
-		return null;
+		
+		List<Transaction> oltpConflicts = new ArrayList<Transaction>();
+		for (Transaction txn : allTransactions) {
+			boolean conflict = false;
+			for (Tuple t : txn.getWriteSet()) {
+			//check conflicts with all other txn's readsets
+				for (int i=0; i<allTransactions.size(); i++) {
+					if (i != allTransactions.indexOf(txn)) {
+						Transaction txn_ = allTransactions.get(i);
+						if(txn_.isOlap()) {
+							for (Tuple t_ : txn_.getReadSet()) {
+								if (t.equals(t_)) {
+									conflict = true;
+									break;
+								}
+							}
+						}
+					}
+					if (conflict)
+						break;
+				}
+				if (conflict)
+					break;	
+			}
+			if (conflict)
+				oltpConflicts.add(txn);	
+		}
+		return oltpConflicts;
 	}
 }
