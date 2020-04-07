@@ -40,9 +40,19 @@ public class SSB implements Workload {
 
 	@Override
 	public List<Transaction> getTransactionList() {
+		int seed = 1;
+		double olap_prob = 0.5;
+		double tx0_prob = 0.25;
+		double tx1_prob = 0.25;
+		double tx2_prob = 0.25;
+		//double tx3_prob = 0.25;
+		double read_prob = 0.5;
+		//double write_prob = 1 - read_prob;
+		int min_tuples_oltp = 5;
+		int max_tuples_oltp = 20;
 		int totalReqs = (int) (mRps*mDurationSeconds);
 		int inter_arrival_time_ms = (int)(1000.0/mRps);
-		Random rand = new Random();
+		Random rand = new Random(seed);
 		int supp_offset = 2556;
 		int cust_offset = 2556+2000;
 		int part_offset = 2556+2000+30000;
@@ -51,10 +61,25 @@ public class SSB implements Workload {
 	
 		for (int j=0; j<totalReqs; j++) {
 			double submissionTime = (double)j*inter_arrival_time_ms*1.0;
-			boolean isOlap = rand.nextBoolean();
+			double r1 = rand.nextDouble();
+			boolean isOlap;
+			if (r1 < olap_prob)
+				isOlap = true;
+			else isOlap = false;
+
 			if (isOlap) {  //OLAP
 				Transaction t = new Transaction(j+1, submissionTime, 1.0, 5.0, isOlap);
-				int tx_type = rand.nextInt(4);
+				double r2 = rand.nextDouble();
+				int tx_type;
+				if (r2 < tx0_prob)
+					tx_type = 0;
+				else if (r2 < tx1_prob + tx0_prob)
+					tx_type = 1;
+				else if (r2 < tx2_prob + tx1_prob + tx0_prob)
+					tx_type = 2;
+				else
+					tx_type = 3;
+
 				if (tx_type==0) {
 					for (int i=0;i<2556;i++) //adding 'date' table
 						t.addToReadSet(mTuples.get(i));
@@ -109,15 +134,18 @@ public class SSB implements Workload {
 			}
 			else { //OLTP
 				Transaction t = new Transaction(j+1, submissionTime, 1.0, 5.0, isOlap);
-				int num_reads = rand.nextInt(10);	
-				int num_writes = rand.nextInt(10);	
-				for (int i=0; i<num_reads; i++) {
-					int rand_read = rand.nextInt(total_tuples);
-					t.addToReadSet(mTuples.get(rand_read));
-				}	
-				for (int i=0; i<num_writes; i++) {
-					int rand_write = rand.nextInt(total_tuples);
-					t.addToWriteSet(mTuples.get(rand_write));
+				int num_tuples = rand.nextInt(max_tuples_oltp-min_tuples_oltp+1) + min_tuples_oltp;
+
+				for (int i=0; i<num_tuples; i++) {
+					double r3 = rand.nextDouble();
+					if (r3 < read_prob) {
+						int rand_read = rand.nextInt(total_tuples);
+						t.addToReadSet(mTuples.get(rand_read));
+					}
+					else {
+						int rand_write = rand.nextInt(total_tuples);
+						t.addToWriteSet(mTuples.get(rand_write));
+					}
 				}	
 			
 				transactions.add(t);
