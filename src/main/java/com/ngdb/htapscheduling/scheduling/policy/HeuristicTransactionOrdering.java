@@ -3,17 +3,30 @@ package com.ngdb.htapscheduling.scheduling.policy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import com.ngdb.htapscheduling.Simulation;
+import com.ngdb.htapscheduling.cluster.PCIeUtils;
 import com.ngdb.htapscheduling.database.Location;
 import com.ngdb.htapscheduling.database.Transaction;
-import com.ngdb.htapscheduling.database.Tuple;
 import com.ngdb.htapscheduling.database.TransactionExecutionContext;
+import com.ngdb.htapscheduling.database.Tuple;
 import com.ngdb.htapscheduling.events.EpochStartEvent;
 import com.ngdb.htapscheduling.events.EventQueue;
 
 public class HeuristicTransactionOrdering implements TransactionOrdering {
+
+	// TODO: Configurable
+	private Double alpha = 0.3;
+	private Double beta = 0.3;
+	private Random mRandom;
+
+	public HeuristicTransactionOrdering() {
+		mRandom = new Random(0);
+	}
 
 	@Override
 	public List<TransactionExecutionContext> orderTransactionsByPolicy(
@@ -29,21 +42,89 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 		// them
 		if (conflictingTransactions.size() == 0) {
 			// case B
+			// First sort transactions into OLTP and OLAP
+			List<Transaction> oltpTransactions = new ArrayList<>();
+			List<Transaction> olapTransactions = new ArrayList<>();
+			for (Transaction t : transactionList) {
+				if (t.isOlap()) {
+					olapTransactions.add(t);
+				} else {
+					oltpTransactions.add(t);
+				}
+			}
+			// Order oltp transactions by accept stamp and specify their
+			// execution contexts
+			Collections.sort(oltpTransactions,
+					new TransactionOrderComparator());
+			for (Transaction t : oltpTransactions) {
+				executionContexts.add(new TransactionExecutionContext(t,
+						new Location("cpu", 0)));
+			}
+			// for olap transactions now, compute a score towards GPU alignment
+			Map<Transaction, Map<Integer, Double>> scores = computeScores(
+					olapTransactions);
+			Map<Integer, List<Transaction>> gpuExecutionList = new HashMap<>();
+			for (int i = 0; i < Simulation.getInstance().getCluster()
+					.getNumGPUSlots(); i++) {
+				gpuExecutionList.put(i, new ArrayList<>());
+			}
+			while (true) {
+				Double maxScore = -1.0;
+				Transaction transWithMaxScore = null;
+				Integer bestFitGPUID = -1;
+				for (Transaction t : scores.keySet()) {
+					for (Integer id : scores.get(t).keySet()) {
+						if (Double.compare(scores.get(t).get(id),
+								maxScore) > 0) {
+							maxScore = scores.get(t).get(id);
+							transWithMaxScore = t;
+							bestFitGPUID = id;
+						}
+					}
+				}
+				scores.remove(transWithMaxScore);
+				Integer gpuWithMinAssignment = 0;
+				Double gpuWithMinAssignmentTime = 0.0;
+				for (Integer gpuID : gpuExecutionList.keySet()) {
+					if (Double.compare(
+							getGPUEstimateForTransactions(
+									gpuExecutionList.get(gpuID)),
+							gpuWithMinAssignmentTime) < 0) {
+						gpuWithMinAssignment = gpuID;
+						gpuWithMinAssignmentTime = getGPUEstimateForTransactions(
+								gpuExecutionList.get(gpuID));
+					}
+				}
+				// Pick either depending on beta
+				Integer gpuIdToUse;
+				if (mRandom.nextDouble() < beta) {
+					gpuIdToUse = bestFitGPUID;
+				} else {
+					gpuIdToUse = gpuWithMinAssignment;
+				}
+				gpuExecutionList.get(gpuIdToUse).add(transWithMaxScore);
+				if(scores.size() == 0) {
+					// all assigned to GPU
+					break;
+				}
+				Double maxGPUExecutionTime = 0.0;
+				for (int i = 0; i < Simulation.getInstance().getCluster()
+						.getNumGPUSlots(); i++) {
+					maxGPUExecutionTime = Math.max(maxGPUExecutionTime,
+							getGPUEstimateForTransactions(
+									gpuExecutionList.get(i)));
+				}
+				Double cpuExecutionTime = getEstimateForTransactions(
+						new ArrayList<>(scores.keySet()));
+				if(Double.compare(maxGPUExecutionTime, cpuExecutionTime) > 0) {
+					break;
+				}
+			}
 		} else {
 			// order the conflicting transactions by accept stamp and specify
 			// execution context as CPU
 			Collections.sort(conflictingTransactions,
-					new Comparator<Transaction>() {
-						public int compare(Transaction a, Transaction b) {
-							int cmp = Double.compare(a.getAcceptStamp(),
-									b.getAcceptStamp());
-							if (cmp != 0) {
-								return cmp;
-							}
-							// Tie break by transaction ID
-							return a.getTransactionId() - b.getTransactionId();
-						}
-					});
+					new TransactionOrderComparator());
 			for (Transaction t : conflictingTransactions) {
 				executionContexts.add(new TransactionExecutionContext(t,
 						new Location("cpu", 0)));
@@ -68,16 +149,16 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 
 	private List<Transaction> getOltpConflicts(
 			List<Transaction> allTransactions) {
-		
+
 		List<Transaction> oltpConflicts = new ArrayList<Transaction>();
 		for (Transaction txn : allTransactions) {
 			boolean conflict = false;
 			for (Tuple t : txn.getWriteSet()) {
-			//check conflicts with all other txn's readsets
-				for (int i=0; i<allTransactions.size(); i++) {
+				// check conflicts with all other txn's readsets
+				for (int i = 0; i < allTransactions.size(); i++) {
 					if (i != allTransactions.indexOf(txn)) {
 						Transaction txn_ = allTransactions.get(i);
-						if(txn_.isOlap()) {
+						if (txn_.isOlap()) {
 							for (Tuple t_ : txn_.getReadSet()) {
 								if (t.equals(t_)) {
 									conflict = true;
@@ -90,10 +171,10 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 						break;
 				}
 				if (conflict)
-					break;	
+					break;
 			}
 			if (conflict)
-				oltpConflicts.add(txn);	
+				oltpConflicts.add(txn);
 		}
 		return oltpConflicts;
 	}
@@ -102,5 +183,57 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 			List<Transaction> conflictingTransactions) {
 		// TODO
 		return 0.0;
+	}
+
+	private Double getGPUEstimateForTransactions(
+			List<Transaction> transactions) {
+		Double time = 0.0;
+		for (Transaction t : transactions) {
+			time += t.getGPURunningTime();
+		}
+		return time;
+	}
+
+	private Map<Transaction, Map<Integer, Double>> computeScores(
+			List<Transaction> transactions) {
+		Map<Transaction, Map<Integer, Double>> scores = new HashMap<>();
+		for (Transaction t : transactions) {
+			scores.put(t, new HashMap<>());
+			for (int i = 0; i < Simulation.getInstance().getCluster()
+					.getNumGPUSlots(); i++) {
+				scores.get(t).put(i, computeScore(t, i));
+			}
+		}
+		return scores;
+	}
+
+	private Double computeScore(Transaction transaction, Integer gpuID) {
+		Double dataToBeTransferred = 0.0;
+		for (Tuple t : transaction.getReadSet()) {
+			if (!Simulation.getInstance().getCluster()
+					.doesGPUHaveLatestTupleVersion(gpuID, t,
+							Simulation.getInstance().getCluster()
+									.latestTupleVersion(t))) {
+				dataToBeTransferred += t.getMemory();
+			}
+		}
+		return alpha * transaction.getCPUExecutionTime()
+				/ transaction.getGPURunningTime()
+				+ (1 - alpha) * (PCIeUtils
+						.getHostToDeviceTransferTime(dataToBeTransferred)
+						+ PCIeUtils.getDeviceToHostTransferTime(
+								transaction.getOutputSize()));
+	}
+}
+
+class TransactionOrderComparator implements Comparator<Transaction> {
+	@Override
+	public int compare(Transaction a, Transaction b) {
+		int cmp = Double.compare(a.getAcceptStamp(), b.getAcceptStamp());
+		if (cmp != 0) {
+			return cmp;
+		}
+		// Tie break by transaction ID
+		return a.getTransactionId() - b.getTransactionId();
 	}
 }
