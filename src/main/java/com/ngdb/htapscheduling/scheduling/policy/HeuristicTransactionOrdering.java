@@ -112,7 +112,6 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 					break;
 				}
 			}
-			// TODO: Update execution contexts and overall sorting
 			for (Transaction t : oltpTransactions) {
 				executionContexts.add(new TransactionExecutionContext(t,
 						new Location("cpu", 0)));
@@ -125,6 +124,7 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 							new Location("gpu", i)));
 				}
 			}
+			Collections.sort(executionContexts, new TransactionExecutionContextComparator());
 		} else {
 			// order the conflicting transactions by accept stamp and specify
 			// execution context as CPU
