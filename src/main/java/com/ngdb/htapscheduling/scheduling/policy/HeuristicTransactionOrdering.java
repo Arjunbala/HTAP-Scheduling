@@ -199,50 +199,6 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 		return oltpConflicts;
 	}
 
-	//private Double getEstimateForTransactions(
-	//		List<Transaction> conflictingTransactions) {
-	//	double timeEstimate = 0.0;
-	//	int max_threads = Simulation.getInstance().getCluster().getCores() / 4;
-	//	int used_threads = 0;
-	//	int num_txns = conflictingTransactions.size();
-	//	List<Transaction> runningTransactions;
-	//	List<Transaction> completedTransactions;
-	//	Map <Transaction, Double> stop_time_map = new HashMap<>();
-	//	Transaction txn = conflictingTransactions.get(0);
-	//	runningTransactions.add(txn);
-	//	conflictTransactions.remove(txn);
-	//	used_threads++;
-	//	timeEstimate += txn.getCPUExecutionTime();
-	//	stop_time_map.put(txn,Simulation.getInstance().getTime()+ txn.getCPUExecutionTime());
-	//	
-	//	while (completedTransaction.size() < num_txns) {
-	//		for (Transaction t : conflictingTransactions) {
-	//			boolean conflict = false;
-	//			if (used_threads < max_threads) {
-	//				for (Transaction t_ : runningTransactions) {
-	//					if (detect_oltp_conflict(t, t_))
-	//				       		conflict = true;
-	//				}
-	//				if (!conflict)	{
-	//					runningTransactions.add(t);
-	//					conflictingTransactions.remove(t);
-	//					used_threads++;
-	//					stop_time_map.put(txn,Simulation.getInstance().getTime()+t.getCPUExecutionTime());
-	//					timeEstimate = Math.max(Simulation.getInstance().getTime()+t.getCPUExecutionTime(), timeEstimate);
-	//				}
-	//			}
-	//		}
-	//		for (Transaction t : runningTransactions) {
-	//			if (Simulation.getInstance().getTime() > stop_map_time.get(t)){
-	//				runningTransactions.remove(t);
-	//				used_threads--;
-	//				completedTransactions.add(t);
-	//			}
-	//		}
-	//	}
-
-	//	return timeEstimate;
-	//}
 
 	private Double getEstimateForTransactions(
 			List<Transaction> conflictingTransactions) {
