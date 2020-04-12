@@ -13,6 +13,8 @@ public class TestWorkload implements Workload {
 	public List<Tuple> getTupleList() {
 		mTuples = new ArrayList<Tuple>();
 		mTuples.add(new Tuple("test", 1, 10.0, 1));
+		mTuples.add(new Tuple("test", 2, 10.0, 1));
+		mTuples.add(new Tuple("test", 3, 10.0, 1));
 		return mTuples;
 	}
 
@@ -21,6 +23,7 @@ public class TestWorkload implements Workload {
 		List<Transaction> transactions = new ArrayList<Transaction>();
 		Transaction t = new Transaction(1, 0.0, 1.0, 5.0, true);
 		t.addToReadSet(mTuples.get(0));
+		t.addToReadSet(mTuples.get(1));
 		transactions.add(t);
 		return transactions;
 	}

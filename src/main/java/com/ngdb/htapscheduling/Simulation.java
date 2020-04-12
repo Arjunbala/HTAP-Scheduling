@@ -28,6 +28,7 @@ public class Simulation {
 			// All tuples initially have version 0
 			cluster.addTupleToCPU(t, 0);
 		}
+		cluster.printCPUWorkingSet();
 		List<Transaction> transactions = w.getTransactionList();
 		// Give it to the global scheduler
 		GlobalScheduler gs = GlobalScheduler.createInstance(25.0); // TODO: Configurable

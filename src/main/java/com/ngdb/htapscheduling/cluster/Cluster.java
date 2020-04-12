@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.ngdb.htapscheduling.Logging;
 import com.ngdb.htapscheduling.Simulation;
 import com.ngdb.htapscheduling.cluster.policy.MemoryManagement;
 import com.ngdb.htapscheduling.cluster.policy.MemoryManagementPolicy;
@@ -49,7 +50,7 @@ public class Cluster {
 	}
 	
 	public boolean addTupleToCPU(Tuple t, Integer version) {
-		return mCPUWorkingSet.addTuple(t, version);
+		return mCPUWorkingSet.addTuple(t, version, false);
 	}
 	
 	public boolean removeTupleFromCPU(Tuple t) {
@@ -91,7 +92,7 @@ public class Cluster {
 				}
 			}
 			mGPUWorkingSet.get(gpuID).removeTuple(t);
-			mGPUWorkingSet.get(gpuID).addTuple(t, mCPUWorkingSet.getTupleVersion(t));
+			mGPUWorkingSet.get(gpuID).addTuple(t, mCPUWorkingSet.getTupleVersion(t), true);
 			mGPUWorkingSet.get(gpuID).getLastAccessed().put(t, Simulation.getInstance().getTime());
 
 			return true;
@@ -113,5 +114,17 @@ public class Cluster {
 	
 	public Integer latestTupleVersion(Tuple t) {
 		return mCPUWorkingSet.getTupleVersion(t);
+	}
+	
+	public void printCPUWorkingSet() {
+		for(Tuple t : mCPUWorkingSet.getTupleList()) {
+			Logging.getInstance().log(t.getTableName() + " " + Integer.toString(t.getId()), Logging.DEBUG);
+		}
+	}
+	
+	public void printGPUWorkingSet(Integer gpuID) {
+		for(Tuple t : mGPUWorkingSet.get(gpuID).getTupleList()) {
+			Logging.getInstance().log(t.getTableName() + " " + Integer.toString(t.getId()), Logging.DEBUG);
+		}
 	}
 }

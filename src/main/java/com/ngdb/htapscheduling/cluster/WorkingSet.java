@@ -47,12 +47,14 @@ public class WorkingSet {
 	 * @param Integer, indicating the version number of this tuple
 	 * @return true, if tuple was added, false otherwise
 	 */
-	public boolean addTuple(Tuple t, Integer version) {
+	public boolean addTuple(Tuple t, Integer version, Boolean isGpu) {
 		if (!mTuples.contains(t)) {
 			mTuples.add(t);
 			mVersionSet.put(t, version);
 			//GIRI
-			mLastAccessed.put(t, Simulation.getInstance().getTime());
+			if(isGpu) {
+				mLastAccessed.put(t, Simulation.getInstance().getTime());
+			}
 			return true;
 		}
 		return false;
