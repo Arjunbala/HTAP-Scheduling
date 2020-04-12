@@ -6,30 +6,33 @@ public class Logging {
 	public static String INFO = "info";
 	public static String METRICS = "metrics";
 	public static String DEBUG = "debug";
-	
+
 	public static Logging getInstance() {
-		if(sInstance == null) {
+		if (sInstance == null) {
 			sInstance = new Logging();
 		}
 		return sInstance;
 	}
-	
+
 	private Logging() {
 		mLogLevel = "debug";
 	}
-	
+
 	public void log(String msg, String level) {
-		if(mLogLevel.equals(DEBUG)) {
-			System.out.println(level + ": " + msg);
+		if (mLogLevel.equals(DEBUG)) {
+			System.out.println(Simulation.getInstance().getTime() + " " + level
+					+ ": " + msg);
 		} else if (mLogLevel.equals(INFO)) {
-			if(!level.equals(DEBUG)) {
-				System.out.println(level + ": " + msg);
+			if (!level.equals(DEBUG)) {
+				System.out.println(Simulation.getInstance().getTime() + " "
+						+ level + ": " + msg);
 			}
 		} else {
-			if(level.equals(METRICS)) {
-				System.out.println(level + ": " + msg);
+			if (level.equals(METRICS)) {
+				System.out.println(Simulation.getInstance().getTime() + " "
+						+ level + ": " + msg);
 			}
 		}
 	}
-	
+
 }

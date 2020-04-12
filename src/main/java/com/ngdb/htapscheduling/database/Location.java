@@ -23,4 +23,9 @@ public class Location {
 	public Integer getId() {
 		return id;
 	}
+	
+	@Override
+	public String toString() {
+		return device + ":" + Integer.toString(id);
+	}
 }

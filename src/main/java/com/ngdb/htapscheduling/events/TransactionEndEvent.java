@@ -23,6 +23,7 @@ public class TransactionEndEvent extends Event {
 	@Override
 	public void handleEvent() {
 		// TODO: Record metrics
+		super.handleEvent();
 		TransactionScheduler.getInstance().endTransaction(transaction, location);
 	}
 }

@@ -18,6 +18,7 @@ public class TransactionStartEvent extends Event {
 	
 	@Override
 	public void handleEvent() {
+		super.handleEvent();
 		TransactionScheduler.getInstance().startTransaction(transaction, location);
 	}
 }

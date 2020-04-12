@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import com.ngdb.htapscheduling.Logging;
 import com.ngdb.htapscheduling.database.Transaction;
 import com.ngdb.htapscheduling.events.EpochStartEvent;
 import com.ngdb.htapscheduling.events.EventQueue;
@@ -40,6 +41,13 @@ public class GlobalScheduler {
 		transactionList.add(t);
 	}
 
+	public void printTransactionList() {
+		for (Transaction t : transactionList) {
+			Logging.getInstance().log(Integer.toString(t.getTransactionId()),
+					Logging.DEBUG);
+		}
+	}
+
 	public void startExecution() {
 		// Sort the transaction list by accept stamp
 		Collections.sort(transactionList, new Comparator<Transaction>() {
@@ -65,9 +73,27 @@ public class GlobalScheduler {
 						.enqueueEvent(new EpochStartEvent(
 								(epochNumber + 1) * epochTime,
 								transactionsInEpoch, epochNumber));
+				for (Transaction trx : transactionsInEpoch) {
+					Logging.getInstance().log(
+							"ID: " + Integer.toString(trx.getTransactionId())
+									+ " Epoch: "
+									+ Integer.toString(epochNumber),
+							Logging.INFO);
+				}
 				transactionsInEpoch = new ArrayList<>();
 				epochNumber += 1; // advance epoch
 				transactionsInEpoch.add(t);
+			}
+		}
+		if (transactionsInEpoch.size() > 0) {
+			EventQueue.getInstance().enqueueEvent(
+					new EpochStartEvent((epochNumber + 1) * epochTime,
+							transactionsInEpoch, epochNumber));
+			for (Transaction trx : transactionsInEpoch) {
+				Logging.getInstance()
+						.log("ID: " + Integer.toString(trx.getTransactionId())
+								+ " Epoch: " + Integer.toString(epochNumber),
+								Logging.INFO);
 			}
 		}
 	}

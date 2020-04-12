@@ -20,4 +20,9 @@ public class TupleContext {
 	public void setReleaseTime(Double releaseTime) {
 		mExpectedReleaseTime = releaseTime;
 	}
+	
+	@Override
+	public String toString() {
+		return mTuple.getTableName() + mTuple.getId() + " : " + mExpectedReleaseTime;
+	}
 }

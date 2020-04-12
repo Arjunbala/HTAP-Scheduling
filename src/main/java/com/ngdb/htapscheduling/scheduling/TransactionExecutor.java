@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.ngdb.htapscheduling.Logging;
 import com.ngdb.htapscheduling.Simulation;
 import com.ngdb.htapscheduling.cluster.PCIeUtils;
 import com.ngdb.htapscheduling.database.Location;
@@ -80,17 +81,20 @@ public class TransactionExecutor {
 									Simulation.getInstance().getCluster()
 											.latestTupleVersion(t))) {
 						totalDataToTransferKb += t.getMemory();
-						//GIRI
-						//Simulation.getInstance().getCluster().getGPUWorkingSet(location.getId())
-						//		.getLastAccessed().put(t, Simulation.getInstance().getTime());
-						
-						Simulation.getInstance().getCluster()
-								.migrateTupleToGPU(t, location.getId(), transaction.getReadSet());
+						// GIRI
+						// Simulation.getInstance().getCluster().getGPUWorkingSet(location.getId())
+						// .getLastAccessed().put(t,
+						// Simulation.getInstance().getTime());
+
+						Simulation.getInstance().getCluster().migrateTupleToGPU(
+								t, location.getId(), transaction.getReadSet());
 					}
 				}
 				for (Tuple t : transaction.getReadSet()) {
-					Simulation.getInstance().getCluster().getGPUWorkingSet(location.getId())
-					.getLastAccessed().put(t, Simulation.getInstance().getTime());
+					Simulation.getInstance().getCluster()
+							.getGPUWorkingSet(location.getId())
+							.getLastAccessed()
+							.put(t, Simulation.getInstance().getTime());
 				}
 				Double transactionCompletionTime = PCIeUtils
 						.getDeviceToHostTransferTime(
@@ -125,53 +129,53 @@ public class TransactionExecutor {
 			transactionCompletionTimeGPU.remove(location.getId());
 		}
 	}
-	
+
 	public Double getEndTime(Transaction transaction, Location loc) {
-		if(loc.getDevice().equals("cpu")) {
+		if (loc.getDevice().equals("cpu")) {
 			return transactionCompletionTimeCPU.get(transaction);
 		} else {
 			return transactionCompletionTimeGPU.get(loc.getId());
 		}
 	}
-	
+
 	public Double getCPUNextAvailableTime() {
-		if(numTransactionsUsingCPU <= Simulation.getInstance().getCluster()
-					.getCores() / 4) {
+		if (numTransactionsUsingCPU <= Simulation.getInstance().getCluster()
+				.getCores() / 4) {
 			return Simulation.getInstance().getTime();
 		} else {
 			// return time of earliest transaction completion
 			Double earliest = Double.POSITIVE_INFINITY;
-			for(Double time : transactionCompletionTimeCPU.values()) {
-				if(time < earliest) {
+			for (Double time : transactionCompletionTimeCPU.values()) {
+				if (time < earliest) {
 					earliest = time;
 				}
 			}
 			return earliest;
 		}
 	}
-	
+
 	public Double getEarliestLockAvailability(Transaction transaction) {
 		Double earliest = 0.0;
-		for(Tuple t : transaction.getReadSet()) {
-			for(TupleContext tc : cpuWriteLocks) {
-				if(tc.getTuple().equals(t)) {
-					if(earliest < tc.getReleaseTime()) {
+		for (Tuple t : transaction.getReadSet()) {
+			for (TupleContext tc : cpuWriteLocks) {
+				if (tc.getTuple().equals(t)) {
+					if (earliest < tc.getReleaseTime()) {
 						earliest = tc.getReleaseTime();
 					}
 				}
 			}
 		}
-		for(Tuple t : transaction.getWriteSet()) {
-			for(TupleContext tc : cpuWriteLocks) {
-				if(tc.getTuple().equals(t)) {
-					if(earliest < tc.getReleaseTime()) {
+		for (Tuple t : transaction.getWriteSet()) {
+			for (TupleContext tc : cpuWriteLocks) {
+				if (tc.getTuple().equals(t)) {
+					if (earliest < tc.getReleaseTime()) {
 						earliest = tc.getReleaseTime();
 					}
 				}
 			}
-			for(TupleContext tc : cpuReadLocks) {
-				if(tc.getTuple().equals(t)) {
-					if(earliest < tc.getReleaseTime()) {
+			for (TupleContext tc : cpuReadLocks) {
+				if (tc.getTuple().equals(t)) {
+					if (earliest < tc.getReleaseTime()) {
 						earliest = tc.getReleaseTime();
 					}
 				}
@@ -179,10 +183,10 @@ public class TransactionExecutor {
 		}
 		return earliest;
 	}
-	
+
 	public Double getGPUNextAvailableTime(Integer gpuID) {
 		Double time = transactionCompletionTimeGPU.get(gpuID);
-		if(time == null) {
+		if (time == null) {
 			return Simulation.getInstance().getTime();
 		}
 		return time;
@@ -202,7 +206,7 @@ public class TransactionExecutor {
 			}
 		}
 		// Examine write set
-		for (Tuple t : transaction.getReadSet()) {
+		for (Tuple t : transaction.getWriteSet()) {
 			// check if any of the tuples are read or write locked
 			for (TupleContext tc : cpuWriteLocks) {
 				if (tc.getTuple().equals(t)) {
@@ -226,8 +230,10 @@ public class TransactionExecutor {
 			Location location, boolean isInsert) {
 		if (isInsert) {
 			handleInsert(transaction, location);
+			dumpLockInfo();
 		} else {
 			handleRemove(transaction, location);
+			dumpLockInfo();
 		}
 	}
 
@@ -281,6 +287,18 @@ public class TransactionExecutor {
 		}
 		for (TupleContext entry : entries) {
 			cpuWriteLocks.remove(entry);
+		}
+	}
+
+	private void dumpLockInfo() {
+		Logging.getInstance().log("Dumping lock info", Logging.DEBUG);
+		for (TupleContext tc : cpuReadLocks) {
+			Logging.getInstance().log("Read lock on " + tc.toString(),
+					Logging.DEBUG);
+		}
+		for (TupleContext tc : cpuWriteLocks) {
+			Logging.getInstance().log("Write lock on " + tc.toString(),
+					Logging.DEBUG);
 		}
 	}
 }
