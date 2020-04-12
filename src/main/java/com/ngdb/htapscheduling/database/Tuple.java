@@ -7,6 +7,7 @@ public class Tuple {
 	private Double mMemoryB; // amount of memory occupied by tuple -- will be more convenient if expressed in bytes (Krati)
 	private Integer mNumCols; //num of columns in the table
 	private BitSet bitmask; //bitmask for column (max cols=17)
+	private Boolean mEvictionBit; //eviction bit for memory Management
 	/**
 	 * Parameterized constructor
 	 * 
@@ -19,6 +20,7 @@ public class Tuple {
 		mMemoryB = memoryB;
 		mNumCols = num_cols;
 		bitmask = new BitSet(mNumCols);
+		mEvictionBit = false;
 	}
 
 	/**
@@ -41,6 +43,14 @@ public class Tuple {
 	
 	public Double getMemory() {
 		return mMemoryB/1024.0;
+	}
+	
+	public Boolean getEvictionBit() {
+		return mEvictionBit;
+	}
+	
+	public void setEvictionBit() {
+		mEvictionBit = true;
 	}
 
 }

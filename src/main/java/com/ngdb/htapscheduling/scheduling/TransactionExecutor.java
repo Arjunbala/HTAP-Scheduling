@@ -80,9 +80,17 @@ public class TransactionExecutor {
 									Simulation.getInstance().getCluster()
 											.latestTupleVersion(t))) {
 						totalDataToTransferKb += t.getMemory();
+						//GIRI
+						//Simulation.getInstance().getCluster().getGPUWorkingSet(location.getId())
+						//		.getLastAccessed().put(t, Simulation.getInstance().getTime());
+						
 						Simulation.getInstance().getCluster()
-								.migrateTupleToGPU(t, location.getId());
+								.migrateTupleToGPU(t, location.getId(), transaction.getReadSet());
 					}
+				}
+				for (Tuple t : transaction.getReadSet()) {
+					Simulation.getInstance().getCluster().getGPUWorkingSet(location.getId())
+					.getLastAccessed().put(t, Simulation.getInstance().getTime());
 				}
 				Double transactionCompletionTime = PCIeUtils
 						.getDeviceToHostTransferTime(

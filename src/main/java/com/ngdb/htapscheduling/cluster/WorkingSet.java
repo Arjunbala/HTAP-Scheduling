@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.ngdb.htapscheduling.Simulation;
 import com.ngdb.htapscheduling.database.Tuple;
 
 public class WorkingSet {
@@ -12,19 +13,33 @@ public class WorkingSet {
 	private List<Tuple> mTuples; // List of tuples belonging to this working set
 	private Map<Tuple, Integer> mVersionSet; // Version of each tuple in this
 												// working set
-
+	private Map<Tuple, Double> mLastAccessed; //Time of last access of each tuple in this working set
 	/**
 	 * Default constructor
 	 */
 	public WorkingSet() {
 		mTuples = new ArrayList<Tuple>();
 		mVersionSet = new HashMap<Tuple, Integer>();
+		mLastAccessed = new HashMap<Tuple, Double>();
 	}
 
 	public boolean hasTuple(Tuple t) {
 		return mVersionSet.containsKey(t) ? true : false;
 	}
 
+	//GIRI
+	public List<Tuple> getTupleList() {
+		return mTuples;
+	}
+	
+	public Map<Tuple, Integer> getVersionSet() {
+		return mVersionSet;
+	}
+	
+	public Map<Tuple, Double> getLastAccessed() {
+		return mLastAccessed;
+	}
+	
 	/**
 	 * Add a tuple to this working set
 	 * 
@@ -36,6 +51,8 @@ public class WorkingSet {
 		if (!mTuples.contains(t)) {
 			mTuples.add(t);
 			mVersionSet.put(t, version);
+			//GIRI
+			mLastAccessed.put(t, Simulation.getInstance().getTime());
 			return true;
 		}
 		return false;
@@ -51,6 +68,7 @@ public class WorkingSet {
 		if (mTuples.contains(t)) {
 			mTuples.remove(t);
 			mVersionSet.remove(t);
+			mLastAccessed.remove(t);
 		}
 		return false;
 	}
@@ -80,4 +98,6 @@ public class WorkingSet {
 	public Integer getTupleVersion(Tuple t) {
 		return mVersionSet.containsKey(t) ? mVersionSet.get(t) : -1;
 	}
+	
+	
 }

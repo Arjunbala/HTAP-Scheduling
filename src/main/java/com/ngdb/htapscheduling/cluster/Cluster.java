@@ -1,8 +1,13 @@
 package com.ngdb.htapscheduling.cluster;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import com.ngdb.htapscheduling.Simulation;
+import com.ngdb.htapscheduling.cluster.policy.MemoryManagement;
+import com.ngdb.htapscheduling.cluster.policy.MemoryManagementPolicy;
+import com.ngdb.htapscheduling.cluster.policy.MemoryManagementPolicyFactory;
 import com.ngdb.htapscheduling.database.Tuple;
 
 /**
@@ -14,7 +19,8 @@ public class Cluster {
 	public WorkingSet mCPUWorkingSet; // CPU Working Set - assume infinite memory here
 	private Map<Integer, WorkingSet> mGPUWorkingSet; // Mapping between GPU and its working set
 	private Map<Integer, Double> mAvailableGPUMemoryKB; // Mapping between GPU and available memory
-	
+	private MemoryManagement memoryManagementPolicy;
+
 	/**
 	 * Parameterized constructor
 	 * @param numCPUCores
@@ -30,6 +36,8 @@ public class Cluster {
 			mGPUWorkingSet.put(i, new WorkingSet());
 			mAvailableGPUMemoryKB.put(i, gpuMemoryKB);
 		}
+		memoryManagementPolicy = MemoryManagementPolicyFactory.getInstance()
+				.createMemoryManagementPolicy(MemoryManagementPolicy.RANDOM);
 	}
 	
 	public Integer getCores() {
@@ -48,7 +56,7 @@ public class Cluster {
 		return mCPUWorkingSet.removeTuple(t);
 	}
 	
-	public boolean addTupleToGPU(Tuple t, Integer version, Integer gpuID) {
+	/*public boolean addTupleToGPU(Tuple t, Integer version, Integer gpuID) {
 		if(gpuID >= mNumGPUSlots) {
 			return false;
 		}
@@ -62,16 +70,37 @@ public class Cluster {
 		}
 		// TODO: Update memory
 		return mGPUWorkingSet.get(gpuID).removeTuple(t);
-	}
+	}*/
 	
-	public boolean migrateTupleToGPU(Tuple t, Integer gpuID) {
+	public boolean migrateTupleToGPU(Tuple t, Integer gpuID, List<Tuple> transactionReadSet) {
 		if(mGPUWorkingSet.get(gpuID).getTupleVersion(t) < mCPUWorkingSet.getTupleVersion(t)) {
 			// TODO: Memory check and eviction policy
+			if (mGPUWorkingSet.get(gpuID).getTupleVersion(t) == -1) {
+				if (mAvailableGPUMemoryKB.get(gpuID) >= t.getMemory()) {
+					mAvailableGPUMemoryKB.put(gpuID, mAvailableGPUMemoryKB.get(gpuID) - t.getMemory());
+				} else {
+					Double memoryNeededOnGPU = t.getMemory() - mAvailableGPUMemoryKB.get(gpuID);
+					List<Tuple> evictTuplesList = memoryManagementPolicy
+							.MemoryManagementByPolicy(mGPUWorkingSet.get(gpuID), mCPUWorkingSet,
+									transactionReadSet, memoryNeededOnGPU);
+					for (Tuple tt: evictTuplesList) {
+						mAvailableGPUMemoryKB.put(gpuID, mAvailableGPUMemoryKB.get(gpuID) + tt.getMemory());
+						mGPUWorkingSet.get(gpuID).getTupleList().remove(tt);
+					}
+					//perform eviction and shit here.
+				}
+			}
 			mGPUWorkingSet.get(gpuID).removeTuple(t);
 			mGPUWorkingSet.get(gpuID).addTuple(t, mCPUWorkingSet.getTupleVersion(t));
+			mGPUWorkingSet.get(gpuID).getLastAccessed().put(t, Simulation.getInstance().getTime());
+
 			return true;
 		}
 		return false;
+	}
+	
+	public WorkingSet getGPUWorkingSet(Integer gpuID) {
+		return mGPUWorkingSet.get(gpuID);
 	}
 	
 	public boolean doesGPUHaveLatestTupleVersion(Integer gpuID, Tuple t, Integer targetVersion) {

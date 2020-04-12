@@ -5,13 +5,13 @@ public class PCIeUtils {
 		if (sizeKB < 16384.0)
 			return 1.0;
 		else
-			return Math.ceil(0.0001205*sizeKB-0.3629);
+			return 0.0001205*sizeKB-0.3629;
 	}
 	
 	public static Double getDeviceToHostTransferTime(Double sizeKB) {
 		if (sizeKB <= 2048)
 			return 1.0;
 		else
-			return Math.ceil(0.0003490*sizeKB+0.1357);
+			return 0.0003490*sizeKB+0.1357;
 	}
 }
