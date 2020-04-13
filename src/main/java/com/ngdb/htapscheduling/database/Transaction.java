@@ -128,12 +128,4 @@ public class Transaction {
 		}
 		return false;
 	}
-
-	public void setmGPURunningTimeEstimateMs(Double gpuRunningTimeEstimateMs) {
-		mGPURunningTimeEstimateMs = gpuRunningTimeEstimateMs;
-	}
-	
-	public void setmCPURunningTimeEstimateMs(Double cpuRunningTimeEstimateMs) {
-		mCPURunningTimeEstimateMs = cpuRunningTimeEstimateMs;
-	}
 }
