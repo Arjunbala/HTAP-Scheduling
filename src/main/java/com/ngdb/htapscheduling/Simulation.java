@@ -19,7 +19,7 @@ public class Simulation {
 
 	public Simulation() {
 		mTimeMs = 0.0;
-		cluster = new Cluster(32, 1, 16*1024*1024*1.0); // TODO: Configurable
+		cluster = new Cluster(32, 1, 16.0); // TODO: Configurable
 	}
 
 	/**
@@ -47,11 +47,17 @@ public class Simulation {
 		List<Tuple> tuples = w.getTupleList();
 		// Bootstrap the CPU initially with all tuples in it's working set
 		// TODO: Think -- should the GPUs initially be empty or pre-populated?
-		for(Tuple t : tuples) {
+		long count = 0;
+		/*for(Tuple t : tuples) {
 			// All tuples initially have version 0
-			cluster.addTupleToCPU(t, 0);
-		}
-		cluster.printCPUWorkingSet();
+			if(count % 100000 == 0) {
+				System.out.println(t.getTableName() + t.getId());
+			}
+			count++;
+			cluster.addTuplesToCPU(t, 0);
+		}*/
+		cluster.addTuplesToCPU(tuples, 0);
+		//cluster.printCPUWorkingSet();
 		List<Transaction> transactions = w.getTransactionList();
 		// Give it to the global scheduler
 		GlobalScheduler gs = GlobalScheduler.createInstance(10.0); // TODO: Configurable

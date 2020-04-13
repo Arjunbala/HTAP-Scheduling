@@ -2,6 +2,9 @@ package com.ngdb.htapscheduling.cluster;
 
 public class PCIeUtils {
 	public static Double getHostToDeviceTransferTime(Double sizeKB) {
+		if(sizeKB == 0) {
+			return 0.0;
+		}
 		if (sizeKB < 16384.0)
 			return 1.0;
 		else
@@ -9,6 +12,9 @@ public class PCIeUtils {
 	}
 	
 	public static Double getDeviceToHostTransferTime(Double sizeKB) {
+		if(sizeKB  == 0) {
+			return 0.0;
+		}
 		if (sizeKB <= 2048)
 			return 1.0;
 		else

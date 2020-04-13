@@ -59,6 +59,16 @@ public class WorkingSet {
 		}
 		return false;
 	}
+	
+	public void addTuples(List<Tuple> tuples, Integer version, Boolean isGPU) {
+		mTuples = tuples;
+		for(Tuple t : mTuples) {
+			mVersionSet.put(t, version);
+			if(isGPU) {
+				mLastAccessed.put(t, Simulation.getInstance().getTime());
+			}
+		}
+	}
 
 	/**
 	 * Remove a tuple from this working set

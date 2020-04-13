@@ -30,7 +30,7 @@ public class SSB implements Workload {
 		for (int i=0; i<6001215; i++)
 			mTuples.add(new Tuple("lineorder", i+1, 107.0, 17)); //17*6=102
 		
-		List<Transaction> transactions = new ArrayList<Transaction>();
+		transactions = new ArrayList<Transaction>();
 	}
 
 	@Override

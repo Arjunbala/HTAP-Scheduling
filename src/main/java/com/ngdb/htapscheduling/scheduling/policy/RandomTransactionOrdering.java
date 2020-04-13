@@ -25,7 +25,10 @@ public class RandomTransactionOrdering implements TransactionOrdering {
 		List<TransactionExecutionContext> executionContexts = new ArrayList<>();
 		for (Transaction t : transactionList) {
 			// Choose CPU or GPU at random
-			if (mDeviceSelectionRandom.nextBoolean()) {
+			if(!t.isOlap()) {
+				executionContexts.add(new TransactionExecutionContext(t,
+						new Location("cpu", 0)));
+			} else if (mDeviceSelectionRandom.nextBoolean()) {
 				// CPU
 				executionContexts.add(new TransactionExecutionContext(t,
 						new Location("cpu", 0)));

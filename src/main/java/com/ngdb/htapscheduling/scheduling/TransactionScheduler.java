@@ -77,7 +77,7 @@ public class TransactionScheduler {
 			for (TransactionExecutionContext context : orderAndLocationToExecute) {
 				if (context.getLocation().getDevice().equals("gpu")
 						&& context.getLocation().getId() == i) {
-					Double startTime = gpuAvailableTime.get(i);
+					Double startTime = Math.max(Simulation.getInstance().getTime(), gpuAvailableTime.get(i));
 					EventQueue.getInstance()
 							.enqueueEvent(new TransactionStartEvent(startTime,
 									context.getTransaction(),
@@ -92,7 +92,7 @@ public class TransactionScheduler {
 	// Transaction execution management APIs below
 	public void startTransaction(Transaction transaction, Location location) {
 		Logging.getInstance().log("Trying to start transaction "
-				+ transaction.getTransactionId() + "on " + location.toString(),
+				+ transaction.getTransactionId() + " on " + location.toString(),
 				Logging.INFO);
 		Integer status = executor.startTransactionExecution(transaction,
 				location);
@@ -129,7 +129,7 @@ public class TransactionScheduler {
 
 	public void endTransaction(Transaction transaction, Location location) {
 		Logging.getInstance().log("Ending transaction "
-				+ transaction.getTransactionId() + "on " + location.toString(),
+				+ transaction.getTransactionId() + " on " + location.toString(),
 				Logging.INFO);
 		executor.endTransactionExecution(transaction, location);
 	}

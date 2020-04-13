@@ -14,6 +14,8 @@ public class TransactionOrderingPolicyFactory {
 		switch(policy) {
 		case RANDOM:
 			return new RandomTransactionOrdering();
+		case HEURISTIC:
+			return new HeuristicTransactionOrdering();
 		}
 		return null;
 	}

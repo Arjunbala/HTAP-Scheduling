@@ -66,11 +66,23 @@ public class TransactionExecutor {
 				}
 			} else {
 				// CPU currently unavailable
+				for (Transaction t : transactionCompletionTimeCPU.keySet()) {
+					Logging.getInstance()
+							.log("Transaction " + t.getTransactionId()
+									+ " currently running on " + location.toString(),
+									Logging.DEBUG);
+				}
 				return 1;
 			}
 		} else {
 			// Check if the particular GPU is available
 			if (transactionCompletionTimeGPU.get(location.getId()) == null) {
+				List<TupleContext> conflicts = checkConflicts(transaction);
+				if (conflicts.size() > 0) {
+					// there is a conflict
+					return 3;
+				}
+				updateReadAndWriteLocks(transaction, location, true);
 				// check if all tuples in read set already reside on GPU
 				// If not, initiate a transfer
 				Double totalDataToTransferKb = 0.0;
@@ -81,10 +93,6 @@ public class TransactionExecutor {
 									Simulation.getInstance().getCluster()
 											.latestTupleVersion(t))) {
 						totalDataToTransferKb += t.getMemory();
-						// GIRI
-						// Simulation.getInstance().getCluster().getGPUWorkingSet(location.getId())
-						// .getLastAccessed().put(t,
-						// Simulation.getInstance().getTime());
 
 						Simulation.getInstance().getCluster().migrateTupleToGPU(
 								t, location.getId(), transaction.getReadSet());
@@ -102,12 +110,20 @@ public class TransactionExecutor {
 						+ PCIeUtils.getHostToDeviceTransferTime(
 								totalDataToTransferKb)
 						+ transaction.getGPURunningTime();
+				Logging.getInstance()
+						.log("Transaction " + transaction.getTransactionId()
+								+ " will complete in "
+								+ transactionCompletionTime, Logging.INFO);
 				transactionCompletionTimeGPU.put(location.getId(),
 						Simulation.getInstance().getTime()
 								+ transactionCompletionTime);
 				return 0;
 			} else {
 				// GPU in use
+				Logging.getInstance()
+				.log("Transaction " + transactionCompletionTimeGPU.get(location.getId())
+						+ " currently running on " + location.toString(),
+						Logging.DEBUG);
 				return 2;
 			}
 		}
@@ -124,8 +140,10 @@ public class TransactionExecutor {
 				Simulation.getInstance().getCluster().mCPUWorkingSet
 						.incrementTupleVersion(t);
 			}
+			Simulation.getInstance().getCluster().printCPUWorkingSet();
 		} else {
 			// GPU
+			updateReadAndWriteLocks(transaction, location, false);
 			transactionCompletionTimeGPU.remove(location.getId());
 		}
 	}
@@ -193,6 +211,8 @@ public class TransactionExecutor {
 	}
 
 	private List<TupleContext> checkConflicts(Transaction transaction) {
+		Logging.getInstance().log("Checking conflicts with transaction "
+				+ transaction.getTransactionId(), Logging.DEBUG);
 		List<TupleContext> conflicts = new ArrayList<TupleContext>();
 		// Examine read set
 		for (Tuple t : transaction.getReadSet()) {
@@ -200,6 +220,9 @@ public class TransactionExecutor {
 			for (TupleContext tc : cpuWriteLocks) {
 				if (tc.getTuple().equals(t)) {
 					if (!conflicts.contains(tc)) {
+						Logging.getInstance().log(
+								"Read conflict with " + tc.toString(),
+								Logging.DEBUG);
 						conflicts.add(tc);
 					}
 				}
@@ -211,6 +234,9 @@ public class TransactionExecutor {
 			for (TupleContext tc : cpuWriteLocks) {
 				if (tc.getTuple().equals(t)) {
 					if (!conflicts.contains(tc)) {
+						Logging.getInstance().log(
+								"Write conflict with " + tc.toString(),
+								Logging.DEBUG);
 						conflicts.add(tc);
 					}
 				}
@@ -218,6 +244,9 @@ public class TransactionExecutor {
 			for (TupleContext tc : cpuReadLocks) {
 				if (tc.getTuple().equals(t)) {
 					if (!conflicts.contains(tc)) {
+						Logging.getInstance().log(
+								"Write conflict with " + tc.toString(),
+								Logging.DEBUG);
 						conflicts.add(tc);
 					}
 				}
@@ -254,11 +283,12 @@ public class TransactionExecutor {
 				}
 			}
 			if (!tupleAlreadyReadLocked) {
-				cpuReadLocks.add(new TupleContext(t, transEndTime));
+				cpuReadLocks
+						.add(new TupleContext(t, transEndTime, transaction));
 			}
 		}
 		for (Tuple t : transaction.getWriteSet()) {
-			cpuWriteLocks.add(new TupleContext(t, transEndTime));
+			cpuWriteLocks.add(new TupleContext(t, transEndTime, transaction));
 		}
 	}
 
@@ -269,7 +299,7 @@ public class TransactionExecutor {
 				// hack to avoid doing ref counting holders of read locks
 				if (tc.getTuple().equals(t)
 						&& Double.compare(Simulation.getInstance().getTime(),
-								tc.getReleaseTime()) == 0) {
+								tc.getReleaseTime()) <= 0) {
 					entries.add(tc);
 				}
 			}
