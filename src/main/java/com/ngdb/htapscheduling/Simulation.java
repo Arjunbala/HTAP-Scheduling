@@ -1,12 +1,15 @@
 package com.ngdb.htapscheduling;
 
+import org.json.simple.JSONObject;
 import java.util.List;
 
 import com.ngdb.htapscheduling.cluster.Cluster;
+import com.ngdb.htapscheduling.config.ConfigUtils;
 import com.ngdb.htapscheduling.database.Transaction;
 import com.ngdb.htapscheduling.database.Tuple;
 import com.ngdb.htapscheduling.events.EventQueue;
 import com.ngdb.htapscheduling.scheduling.GlobalScheduler;
+import com.ngdb.htapscheduling.scheduling.TransactionScheduler;
 import com.ngdb.htapscheduling.workload.Workload;
 import com.ngdb.htapscheduling.workload.WorkloadFactory;
 
@@ -17,9 +20,9 @@ public class Simulation {
 	private static Cluster cluster;
 	private Double mTimeMs; // Current simulation time
 
-	public Simulation() {
+	public Simulation(JSONObject clusterConfig, JSONObject memMgmtConfig) {
 		mTimeMs = 0.0;
-		cluster = new Cluster(32, 1, 16.0); // TODO: Configurable
+		cluster = new Cluster(clusterConfig, memMgmtConfig);
 	}
 
 	/**
@@ -42,8 +45,15 @@ public class Simulation {
 
 	public static void main(String args[]) {
 		System.out.println("Hello world");
-		sInstance = new Simulation();
-		Workload w = WorkloadFactory.getInstance().getWorkloadGenerator("test"); // TODO: Configurable
+		// Format: args <cluster> <workload> <scheduler> <mem_mgmt>
+
+		JSONObject clusterConfig = ConfigUtils.getClusterConfig(args[0]);
+		JSONObject workloadConfig = ConfigUtils.getWorkloadConfig(args[1]);
+		JSONObject schedulerConfig = ConfigUtils.getSchedulerConfig(args[2]);
+		JSONObject memMgmtConfig = ConfigUtils.getMemoryMgmtConfig(args[3]);
+
+		sInstance = new Simulation(clusterConfig, memMgmtConfig);
+		Workload w = WorkloadFactory.getInstance().getWorkloadGenerator(workloadConfig); 
 		List<Tuple> tuples = w.getTupleList();
 		// Bootstrap the CPU initially with all tuples in it's working set
 		// TODO: Think -- should the GPUs initially be empty or pre-populated?
@@ -60,7 +70,9 @@ public class Simulation {
 		//cluster.printCPUWorkingSet();
 		List<Transaction> transactions = w.getTransactionList();
 		// Give it to the global scheduler
-		GlobalScheduler gs = GlobalScheduler.createInstance(10.0); // TODO: Configurable
+		GlobalScheduler gs = GlobalScheduler.createInstance(schedulerConfig); 
+		TransactionScheduler ts = TransactionScheduler.createInstance(schedulerConfig); 
+
 		for(Transaction t : transactions) {
 			gs.addTransaction(t);
 		}
@@ -71,9 +83,6 @@ public class Simulation {
 	}
 
 	public static Simulation getInstance() {
-		if(sInstance == null) {
-			sInstance = new Simulation();
-		}
 		return sInstance;
 	}
 	

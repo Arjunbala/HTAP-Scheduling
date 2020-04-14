@@ -1,11 +1,13 @@
 package com.ngdb.htapscheduling.scheduling;
 
+import org.json.simple.JSONObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 import com.ngdb.htapscheduling.Logging;
+import com.ngdb.htapscheduling.config.ConfigUtils;
 import com.ngdb.htapscheduling.database.Transaction;
 import com.ngdb.htapscheduling.events.EpochStartEvent;
 import com.ngdb.htapscheduling.events.EventQueue;
@@ -19,12 +21,14 @@ public class GlobalScheduler {
 	private Double epochTime;
 	private List<Transaction> transactionList;
 
-	public static GlobalScheduler createInstance(Double epochTime) {
+	public static GlobalScheduler createInstance(JSONObject config) {
 		if (sInstance != null) {
 			// already have an instance
 			return null;
 		}
+		double epochTime = Double.parseDouble(ConfigUtils.getAttributeValue(config, "epochTime")); 
 		sInstance = new GlobalScheduler(epochTime);
+
 		return sInstance;
 	}
 

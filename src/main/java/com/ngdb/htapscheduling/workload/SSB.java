@@ -1,9 +1,11 @@
 package com.ngdb.htapscheduling.workload;
 
+import org.json.simple.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import com.ngdb.htapscheduling.config.ConfigUtils;
 import com.ngdb.htapscheduling.database.Transaction;
 import com.ngdb.htapscheduling.database.Tuple;
 
@@ -11,9 +13,29 @@ public class SSB implements Workload {
 
 	List<Tuple> mTuples;
 	List<Transaction> transactions;
-	int mRps = 5;
-	int mDurationSeconds = 20;
-	public SSB() {
+	private int mRps;
+	private int mDurationSeconds;
+	private double olap_prob;
+	private double tx0_prob;
+	private double tx1_prob;
+	private double tx2_prob;
+	private double read_prob;
+	private int min_tuples_oltp;
+	private int max_tuples_oltp;
+
+	public SSB(JSONObject config) {
+		JSONObject ssbConfig = ConfigUtils.getJsonValue(config,	"workload_config");
+
+		mRps = Integer.parseInt(ConfigUtils.getAttributeValue(ssbConfig, "mRps"));
+		mDurationSeconds = Integer.parseInt(ConfigUtils.getAttributeValue(ssbConfig, "mDurationSeconds"));
+		min_tuples_oltp = Integer.parseInt(ConfigUtils.getAttributeValue(ssbConfig, "min_tuples_oltp"));
+		max_tuples_oltp = Integer.parseInt(ConfigUtils.getAttributeValue(ssbConfig, "max_tuples_oltp"));
+		olap_prob = Double.parseDouble(ConfigUtils.getAttributeValue(ssbConfig, "olap_prob"));
+		tx0_prob = Double.parseDouble(ConfigUtils.getAttributeValue(ssbConfig, "tx0_prob"));
+		tx1_prob = Double.parseDouble(ConfigUtils.getAttributeValue(ssbConfig, "tx1_prob"));
+		tx2_prob = Double.parseDouble(ConfigUtils.getAttributeValue(ssbConfig, "tx2_prob"));
+		read_prob = Double.parseDouble(ConfigUtils.getAttributeValue(ssbConfig, "read_prob"));
+
 		mTuples = new ArrayList<Tuple>();
 		for (int i=0; i<2556; i++)
 			mTuples.add(new Tuple("date", i+1, 115.0, 17)); //17*9=119
@@ -40,19 +62,9 @@ public class SSB implements Workload {
 
 	@Override
 	public List<Transaction> getTransactionList() {
-		int seed = 1;
-		double olap_prob = 0.5;
-		double tx0_prob = 0.25;
-		double tx1_prob = 0.25;
-		double tx2_prob = 0.25;
-		//double tx3_prob = 0.25;
-		double read_prob = 0.5;
-		//double write_prob = 1 - read_prob;
-		int min_tuples_oltp = 5;
-		int max_tuples_oltp = 20;
 		int totalReqs = (int) (mRps*mDurationSeconds);
 		int inter_arrival_time_ms = (int)(1000.0/mRps);
-		Random rand = new Random(seed);
+		Random rand = new Random(0);
 		int supp_offset = 2556;
 		int cust_offset = 2556+2000;
 		int part_offset = 2556+2000+30000;

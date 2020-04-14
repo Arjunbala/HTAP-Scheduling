@@ -1,11 +1,13 @@
 package com.ngdb.htapscheduling.scheduling;
 
+import org.json.simple.JSONObject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.ngdb.htapscheduling.Logging;
 import com.ngdb.htapscheduling.Simulation;
+import com.ngdb.htapscheduling.config.ConfigUtils;
 import com.ngdb.htapscheduling.database.Location;
 import com.ngdb.htapscheduling.database.Transaction;
 import com.ngdb.htapscheduling.database.TransactionExecutionContext;
@@ -18,7 +20,7 @@ import com.ngdb.htapscheduling.scheduling.policy.TransactionOrderingPolicyFactor
 
 public class TransactionScheduler {
 
-	public static TransactionScheduler sInstance = null;
+	private static TransactionScheduler sInstance = null;
 	private TransactionOrdering transactionOrderer;
 	private TransactionExecutor executor;
 
@@ -26,17 +28,18 @@ public class TransactionScheduler {
 	Double cpuAvailableTime;
 	Map<Integer, Double> gpuAvailableTime;
 
-	public static TransactionScheduler getInstance() {
-		if (sInstance == null) {
-			sInstance = new TransactionScheduler();
-		}
+	public static TransactionScheduler createInstance(JSONObject config) {
+		sInstance = new TransactionScheduler(config);
 		return sInstance;
 	}
 
-	private TransactionScheduler() {
-		// TODO: Make configurable
+	public static TransactionScheduler getInstance() {
+		return sInstance;
+	}
+
+	private TransactionScheduler(JSONObject config) {
 		transactionOrderer = TransactionOrderingPolicyFactory.getInstance()
-				.createOrderingPolicy(OrderingPolicy.RANDOM);
+				.createOrderingPolicy(config);
 		cpuAvailableTime = 0.0;
 		gpuAvailableTime = new HashMap<Integer, Double>();
 		for (int i = 0; i < Simulation.getInstance().getCluster()

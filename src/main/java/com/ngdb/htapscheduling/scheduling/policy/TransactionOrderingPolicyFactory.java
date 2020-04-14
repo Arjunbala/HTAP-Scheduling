@@ -1,5 +1,8 @@
 package com.ngdb.htapscheduling.scheduling.policy;
 
+import org.json.simple.JSONObject;
+import com.ngdb.htapscheduling.config.ConfigUtils;
+
 public class TransactionOrderingPolicyFactory {
 	private static TransactionOrderingPolicyFactory sInstance = null;
 	
@@ -10,12 +13,13 @@ public class TransactionOrderingPolicyFactory {
 		return sInstance;
 	}
 	
-	public TransactionOrdering createOrderingPolicy(OrderingPolicy policy) {
+	public TransactionOrdering createOrderingPolicy(JSONObject config) {
+		String policy = ConfigUtils.getAttributeValue(config, "policy_type");
 		switch(policy) {
-		case RANDOM:
-			return new RandomTransactionOrdering();
-		case HEURISTIC:
-			return new HeuristicTransactionOrdering();
+			case "random":
+				return new RandomTransactionOrdering();
+			case "heuristic":
+				return new HeuristicTransactionOrdering(config);
 		}
 		return null;
 	}

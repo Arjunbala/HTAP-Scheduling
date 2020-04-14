@@ -1,5 +1,6 @@
 package com.ngdb.htapscheduling.cluster;
 
+import org.json.simple.JSONObject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,7 @@ import com.ngdb.htapscheduling.Simulation;
 import com.ngdb.htapscheduling.cluster.policy.MemoryManagement;
 import com.ngdb.htapscheduling.cluster.policy.MemoryManagementPolicy;
 import com.ngdb.htapscheduling.cluster.policy.MemoryManagementPolicyFactory;
+import com.ngdb.htapscheduling.config.ConfigUtils;
 import com.ngdb.htapscheduling.database.Tuple;
 
 /**
@@ -31,9 +33,10 @@ public class Cluster {
 	 * @param numCPUCores
 	 * @param numGPUs
 	 */
-	public Cluster(Integer numCPUCores, Integer numGPUs, Double gpuMemoryKB) {
-		mNumCPUCores = numCPUCores;
-		mNumGPUSlots = numGPUs;
+	public Cluster(JSONObject clusterConfig, JSONObject memMgmtConfig) {
+		mNumCPUCores = Integer.parseInt(ConfigUtils.getAttributeValue(clusterConfig, "numCPUCores")); 
+		mNumGPUSlots = Integer.parseInt(ConfigUtils.getAttributeValue(clusterConfig, "numGPUs")); 
+		double gpuMemoryKB = Double.parseDouble(ConfigUtils.getAttributeValue(clusterConfig, "gpuMemoryKB")); 
 		mCPUWorkingSet = new WorkingSet();
 		mGPUWorkingSet = new HashMap<Integer, WorkingSet>();
 		mAvailableGPUMemoryKB = new HashMap<Integer, Double>();
@@ -41,8 +44,21 @@ public class Cluster {
 			mGPUWorkingSet.put(i, new WorkingSet());
 			mAvailableGPUMemoryKB.put(i, gpuMemoryKB);
 		}
-		memoryManagementPolicy = MemoryManagementPolicyFactory.getInstance()
-				.createMemoryManagementPolicy(MemoryManagementPolicy.RANDOM);
+		String memMgmtPolicyType = ConfigUtils.getAttributeValue(memMgmtConfig, "policy_type");
+		switch(memMgmtPolicyType) {
+			case "random":
+				memoryManagementPolicy = MemoryManagementPolicyFactory.getInstance()
+					.createMemoryManagementPolicy(MemoryManagementPolicy.RANDOM);
+				break;
+			case "lru":
+				memoryManagementPolicy = MemoryManagementPolicyFactory.getInstance()
+					.createMemoryManagementPolicy(MemoryManagementPolicy.LRU);
+				break;
+			case "two_level":
+				memoryManagementPolicy = MemoryManagementPolicyFactory.getInstance()
+					.createMemoryManagementPolicy(MemoryManagementPolicy.TWOLEVEL);
+				break;
+		}
 	}
 
 	public Integer getCores() {

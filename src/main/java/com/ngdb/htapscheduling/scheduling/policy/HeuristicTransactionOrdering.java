@@ -1,5 +1,6 @@
 package com.ngdb.htapscheduling.scheduling.policy;
 
+import org.json.simple.JSONObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -10,6 +11,7 @@ import java.util.Random;
 
 import com.ngdb.htapscheduling.Simulation;
 import com.ngdb.htapscheduling.cluster.PCIeUtils;
+import com.ngdb.htapscheduling.config.ConfigUtils;
 import com.ngdb.htapscheduling.database.Location;
 import com.ngdb.htapscheduling.database.Transaction;
 import com.ngdb.htapscheduling.database.TransactionExecutionContext;
@@ -19,13 +21,15 @@ import com.ngdb.htapscheduling.events.EventQueue;
 
 public class HeuristicTransactionOrdering implements TransactionOrdering {
 
-	// TODO: Configurable
-	private Double alpha = 0.3;
-	private Double beta = 0.3;
+	private Double alpha;
+	private Double beta;
 	private Random mRandom;
 
-	public HeuristicTransactionOrdering() {
+	public HeuristicTransactionOrdering(JSONObject config) {
 		mRandom = new Random(0);
+		JSONObject heuristicConfig = ConfigUtils.getJsonValue(config, "policy_config");
+		alpha = Double.parseDouble(ConfigUtils.getAttributeValue(heuristicConfig, "alpha"));
+		beta = Double.parseDouble(ConfigUtils.getAttributeValue(heuristicConfig, "beta"));
 	}
 
 	@Override
