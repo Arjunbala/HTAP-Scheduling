@@ -36,13 +36,12 @@ public class TwoLevelMemoryManagement implements MemoryManagement {
 			if (gpuVersionSet.get(t) < cpuWorkingSet.getTupleVersion(t)) {
 				t.setEvictionBit();
 				evictTupleList.add(t);
+				memoryNeeded -= t.getMemory();
 			}
-			memoryNeeded -= t.getMemory();
 			//We actually try to end up evicting all tuples that are out of version on GPU
 			//We just need to uncomment this line if we are only evicting as much as we need.
 			//if (memoryNeeded > 0)
 			//	continue;
-			break;
 		}
 		
 		if (memoryNeeded > 0) {			

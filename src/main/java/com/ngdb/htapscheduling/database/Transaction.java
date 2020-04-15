@@ -76,11 +76,7 @@ public class Transaction {
 	 * @return boolean, indicating if tuple was successfully added or not
 	 */
 	public boolean addToReadSet(Tuple t) {
-		if (!mReadSet.contains(t)) {
-			mReadSet.add(t);
-			return true;
-		}
-		return false;
+		return mReadSet.add(t);
 	}
 
 	/**
@@ -108,11 +104,7 @@ public class Transaction {
 	 * @return boolean, indicating if tuple was successfully added or not
 	 */
 	public boolean addToWriteSet(Tuple t) {
-		if (!mWriteSet.contains(t)) {
-			mWriteSet.add(t);
-			return true;
-		}
-		return false;
+		return mWriteSet.add(t);
 	}
 
 	/**

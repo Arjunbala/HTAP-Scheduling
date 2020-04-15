@@ -299,7 +299,7 @@ public class TransactionExecutor {
 				// hack to avoid doing ref counting holders of read locks
 				if (tc.getTuple().equals(t)
 						&& Double.compare(Simulation.getInstance().getTime(),
-								tc.getReleaseTime()) <= 0) {
+								tc.getReleaseTime()) >= 0) {
 					entries.add(tc);
 				}
 			}

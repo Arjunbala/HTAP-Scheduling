@@ -103,11 +103,13 @@ public class Cluster {
 				} else {
 					Double memoryNeededOnGPU = t.getMemory()
 							- mAvailableGPUMemoryKB.get(gpuID);
+					Logging.getInstance().log("Eviction required to free memory " + memoryNeededOnGPU, Logging.INFO);
 					List<Tuple> evictTuplesList = memoryManagementPolicy
 							.MemoryManagementByPolicy(mGPUWorkingSet.get(gpuID),
 									mCPUWorkingSet, transactionReadSet,
 									memoryNeededOnGPU);
 					for (Tuple tt : evictTuplesList) {
+						Logging.getInstance().log("Evicting tuple " + tt.toString() , Logging.INFO);
 						mAvailableGPUMemoryKB.put(gpuID,
 								mAvailableGPUMemoryKB.get(gpuID)
 										+ tt.getMemory());

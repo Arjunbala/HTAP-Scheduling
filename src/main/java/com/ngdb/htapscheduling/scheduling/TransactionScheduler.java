@@ -1,20 +1,20 @@
 package com.ngdb.htapscheduling.scheduling;
 
-import org.json.simple.JSONObject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.json.simple.JSONObject;
+
 import com.ngdb.htapscheduling.Logging;
 import com.ngdb.htapscheduling.Simulation;
-import com.ngdb.htapscheduling.config.ConfigUtils;
 import com.ngdb.htapscheduling.database.Location;
 import com.ngdb.htapscheduling.database.Transaction;
 import com.ngdb.htapscheduling.database.TransactionExecutionContext;
+import com.ngdb.htapscheduling.database.Tuple;
 import com.ngdb.htapscheduling.events.EventQueue;
 import com.ngdb.htapscheduling.events.TransactionEndEvent;
 import com.ngdb.htapscheduling.events.TransactionStartEvent;
-import com.ngdb.htapscheduling.scheduling.policy.OrderingPolicy;
 import com.ngdb.htapscheduling.scheduling.policy.TransactionOrdering;
 import com.ngdb.htapscheduling.scheduling.policy.TransactionOrderingPolicyFactory;
 
@@ -80,7 +80,9 @@ public class TransactionScheduler {
 			for (TransactionExecutionContext context : orderAndLocationToExecute) {
 				if (context.getLocation().getDevice().equals("gpu")
 						&& context.getLocation().getId() == i) {
-					Double startTime = Math.max(Simulation.getInstance().getTime(), gpuAvailableTime.get(i));
+					Double startTime = Math.max(
+							Simulation.getInstance().getTime(),
+							gpuAvailableTime.get(i));
 					EventQueue.getInstance()
 							.enqueueEvent(new TransactionStartEvent(startTime,
 									context.getTransaction(),
@@ -97,10 +99,20 @@ public class TransactionScheduler {
 		Logging.getInstance().log("Trying to start transaction "
 				+ transaction.getTransactionId() + " on " + location.toString(),
 				Logging.INFO);
+		// Change last accessed on working set for LRU purposes
+		if (location.getDevice().equals("gpu")) {
+			for (Tuple t : transaction.getReadSet()) {
+				Simulation.getInstance().getCluster()
+						.getGPUWorkingSet(location.getId())
+						.setLastAccessed(t, Simulation.getInstance().getTime());
+			}
+		}
 		Integer status = executor.startTransactionExecution(transaction,
 				location);
-		Logging.getInstance().log("Transaction " + transaction.getTransactionId() + 
-				" has status " + Integer.toString(status), Logging.INFO);
+		Logging.getInstance()
+				.log("Transaction " + transaction.getTransactionId()
+						+ " has status " + Integer.toString(status),
+						Logging.INFO);
 		if (status == 0) {
 			// successful, enqueue end transaction event
 			Double endTime = executor.getEndTime(transaction, location);

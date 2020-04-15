@@ -1,9 +1,10 @@
 package com.ngdb.htapscheduling.workload;
 
-import org.json.simple.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import org.json.simple.JSONObject;
 
 import com.ngdb.htapscheduling.config.ConfigUtils;
 import com.ngdb.htapscheduling.database.Transaction;

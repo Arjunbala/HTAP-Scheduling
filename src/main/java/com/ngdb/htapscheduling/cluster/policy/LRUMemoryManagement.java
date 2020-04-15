@@ -25,7 +25,8 @@ public class LRUMemoryManagement implements MemoryManagement {
 		}
 		//Do the check for whether tuple at index 0 is part of readSet
 		//What about the case where we are unable to evict anything?
-		if (indexTuple == 0 && transactionReadSet.indexOf(tupleList.get(0)) == -1) {
+		if (indexTuple == 0 && transactionReadSet.indexOf(tupleList.get(0)) != -1) {
+			assert(false);
 			return -1; //Might just return 0?
 		}
 			
@@ -50,7 +51,6 @@ public class LRUMemoryManagement implements MemoryManagement {
 			evictTupleList.add(tupleList.get(lowestTimeStampTupleIndex));
 			memoryNeeded -= tupleList.get(lowestTimeStampTupleIndex).getMemory();
 		}
-		
 		return evictTupleList;
 	}
 	
