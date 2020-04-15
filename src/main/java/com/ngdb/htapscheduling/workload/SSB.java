@@ -156,19 +156,23 @@ public class SSB implements Workload {
 			else { //OLTP
 				Transaction t = new Transaction(j+1, submissionTime, 1.0, 5.0, isOlap);
 				int num_tuples = rand.nextInt(max_tuples_oltp-min_tuples_oltp+1) + min_tuples_oltp;
+				int num_read_tuples = 0;
+				int num_write_tuples = 0;
 
 				for (int i=0; i<num_tuples; i++) {
 					double r3 = rand.nextDouble();
 					if (r3 < read_prob) {
 						int rand_read = rand.nextInt(total_tuples);
 						t.addToReadSet(mTuples.get(rand_read));
+						num_read_tuples++;
 					}
 					else {
 						int rand_write = rand.nextInt(total_tuples);
 						t.addToWriteSet(mTuples.get(rand_write));
+						num_write_tuples++;
 					}
 				}	
-			
+				t.setmCPURunningTimeEstimateMs(0.0125*num_write_tuples + 3.2906);
 				transactions.add(t);
 			}
 		}
