@@ -147,17 +147,17 @@ public class Cluster {
 	}
 
 	public void printCPUWorkingSet() {
-		Logging.getInstance().log("Dumping CPU working set", Logging.DEBUG);
+		/*Logging.getInstance().log("Dumping CPU working set", Logging.DEBUG);
 		for (Tuple t : mCPUWorkingSet.getTupleList()) {
 			Logging.getInstance()
 					.log(t.getTableName() + " " + Integer.toString(t.getId())
 							+ " version - " + mCPUWorkingSet.getTupleVersion(t),
 							Logging.DEBUG);
-		}
+		}*/
 	}
 
 	public void printGPUWorkingSet(Integer gpuID) {
-		Logging.getInstance()
+		/*Logging.getInstance()
 				.log("Dumping GPU " + gpuID
 						+ " working set, available memory = "
 						+ mAvailableGPUMemoryKB.get(gpuID), Logging.DEBUG);
@@ -165,6 +165,6 @@ public class Cluster {
 			Logging.getInstance().log(
 					t.getTableName() + " " + Integer.toString(t.getId()),
 					Logging.DEBUG);
-		}
+		}*/
 	}
 }

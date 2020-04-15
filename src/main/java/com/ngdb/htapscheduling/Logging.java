@@ -15,7 +15,7 @@ public class Logging {
 	}
 
 	private Logging() {
-		mLogLevel = "debug";
+		mLogLevel = INFO;
 	}
 
 	public void log(String msg, String level) {

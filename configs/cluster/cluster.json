@@ -1,5 +1,5 @@
 {
     "numCPUCores": 32,
     "numGPUs": 1,
-    "gpuMemoryKB": 3.0
+    "gpuMemoryKB": 16777216
 }
