@@ -302,12 +302,12 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 				dataToBeTransferred += t.getMemory();
 			}
 		}
-		return alpha * transaction.getCPUExecutionTime()
-				/ transaction.getGPURunningTime()
-				+ (1 - alpha) * (PCIeUtils
+		return alpha * (transaction.getCPUExecutionTime()
+				/ transaction.getGPURunningTime()) / 16.327
+				+ (1 - alpha) * (1- (PCIeUtils
 						.getHostToDeviceTransferTime(dataToBeTransferred)
 						+ PCIeUtils.getDeviceToHostTransferTime(
-								transaction.getOutputSize()));
+								transaction.getOutputSize())))/ 18.07;
 	}
 }
 
