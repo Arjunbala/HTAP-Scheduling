@@ -40,6 +40,10 @@ public class WorkingSet {
 		return mLastAccessed;
 	}
 	
+	public void setLastAccessed(Tuple t, Double timestamp) {
+		mLastAccessed.put(t, timestamp);
+	}
+	
 	/**
 	 * Add a tuple to this working set
 	 * 
@@ -48,16 +52,13 @@ public class WorkingSet {
 	 * @return true, if tuple was added, false otherwise
 	 */
 	public boolean addTuple(Tuple t, Integer version, Boolean isGpu) {
-		if (!mTuples.contains(t)) {
-			mTuples.add(t);
-			mVersionSet.put(t, version);
-			//GIRI
-			if(isGpu) {
-				mLastAccessed.put(t, Simulation.getInstance().getTime());
-			}
-			return true;
+		mTuples.add(t);
+		mVersionSet.put(t, version);
+		//GIRI
+		if(isGpu) {
+			mLastAccessed.put(t, Simulation.getInstance().getTime());
 		}
-		return false;
+		return true;
 	}
 	
 	public void addTuples(List<Tuple> tuples, Integer version, Boolean isGPU) {

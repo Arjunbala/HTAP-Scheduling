@@ -103,11 +103,13 @@ public class Cluster {
 				} else {
 					Double memoryNeededOnGPU = t.getMemory()
 							- mAvailableGPUMemoryKB.get(gpuID);
+					Logging.getInstance().log("Eviction required to free memory " + memoryNeededOnGPU, Logging.INFO);
 					List<Tuple> evictTuplesList = memoryManagementPolicy
 							.MemoryManagementByPolicy(mGPUWorkingSet.get(gpuID),
 									mCPUWorkingSet, transactionReadSet,
 									memoryNeededOnGPU);
 					for (Tuple tt : evictTuplesList) {
+						Logging.getInstance().log("Evicting tuple " + tt.toString() , Logging.INFO);
 						mAvailableGPUMemoryKB.put(gpuID,
 								mAvailableGPUMemoryKB.get(gpuID)
 										+ tt.getMemory());
@@ -145,17 +147,17 @@ public class Cluster {
 	}
 
 	public void printCPUWorkingSet() {
-		Logging.getInstance().log("Dumping CPU working set", Logging.DEBUG);
+		/*Logging.getInstance().log("Dumping CPU working set", Logging.DEBUG);
 		for (Tuple t : mCPUWorkingSet.getTupleList()) {
 			Logging.getInstance()
 					.log(t.getTableName() + " " + Integer.toString(t.getId())
 							+ " version - " + mCPUWorkingSet.getTupleVersion(t),
 							Logging.DEBUG);
-		}
+		}*/
 	}
 
 	public void printGPUWorkingSet(Integer gpuID) {
-		Logging.getInstance()
+		/*Logging.getInstance()
 				.log("Dumping GPU " + gpuID
 						+ " working set, available memory = "
 						+ mAvailableGPUMemoryKB.get(gpuID), Logging.DEBUG);
@@ -163,6 +165,6 @@ public class Cluster {
 			Logging.getInstance().log(
 					t.getTableName() + " " + Integer.toString(t.getId()),
 					Logging.DEBUG);
-		}
+		}*/
 	}
 }

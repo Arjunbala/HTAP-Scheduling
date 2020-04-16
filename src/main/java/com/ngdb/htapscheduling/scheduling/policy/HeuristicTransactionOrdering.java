@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import com.ngdb.htapscheduling.Logging;
 import com.ngdb.htapscheduling.Simulation;
 import com.ngdb.htapscheduling.cluster.PCIeUtils;
 import com.ngdb.htapscheduling.config.ConfigUtils;
@@ -27,9 +28,12 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 
 	public HeuristicTransactionOrdering(JSONObject config) {
 		mRandom = new Random(0);
-		JSONObject heuristicConfig = ConfigUtils.getJsonValue(config, "policy_config");
-		alpha = Double.parseDouble(ConfigUtils.getAttributeValue(heuristicConfig, "alpha"));
-		beta = Double.parseDouble(ConfigUtils.getAttributeValue(heuristicConfig, "beta"));
+		JSONObject heuristicConfig = ConfigUtils.getJsonValue(config,
+				"policy_config");
+		alpha = Double.parseDouble(
+				ConfigUtils.getAttributeValue(heuristicConfig, "alpha"));
+		beta = Double.parseDouble(
+				ConfigUtils.getAttributeValue(heuristicConfig, "beta"));
 	}
 
 	@Override
@@ -64,7 +68,7 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 					.getNumGPUSlots(); i++) {
 				gpuExecutionList.put(i, new ArrayList<>());
 			}
-			while (true) {
+			while (true && scores.size() > 0) {
 				Double maxScore = -1.0;
 				Transaction transWithMaxScore = null;
 				Integer bestFitGPUID = -1;
@@ -91,6 +95,11 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 								gpuExecutionList.get(gpuID));
 					}
 				}
+				Logging.getInstance()
+						.log("Transaction "
+								+ transWithMaxScore.getTransactionId()
+								+ " need to choose from gpu " + bestFitGPUID
+								+ " or " + gpuWithMinAssignment, Logging.INFO);
 				// Pick either depending on beta
 				Integer gpuIdToUse;
 				if (mRandom.nextDouble() < beta) {
@@ -98,6 +107,10 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 				} else {
 					gpuIdToUse = gpuWithMinAssignment;
 				}
+				Logging.getInstance()
+						.log("Transaction "
+								+ transWithMaxScore.getTransactionId()
+								+ " chose gpu " + gpuIdToUse, Logging.INFO);
 				gpuExecutionList.get(gpuIdToUse).add(transWithMaxScore);
 				if (scores.size() == 0) {
 					// all assigned to GPU
@@ -128,8 +141,29 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 							new Location("gpu", i)));
 				}
 			}
-			Collections.sort(executionContexts, new TransactionExecutionContextComparator());
+			for(Transaction t : scores.keySet()) {
+				executionContexts.add(new TransactionExecutionContext(t,
+						new Location("cpu", 0)));
+			}
+			Collections.sort(executionContexts,
+					new TransactionExecutionContextComparator());
+			Logging.getInstance().log("Logging execution contexts in epoch",
+					Logging.INFO);
+			for (TransactionExecutionContext tec : executionContexts) {
+				Logging.getInstance()
+						.log("Transaction "
+								+ tec.getTransaction().getTransactionId()
+								+ " scheduled to run at "
+								+ tec.getLocation().toString(), Logging.INFO);
+			}
 		} else {
+			Logging.getInstance().log("Logging conflicting transactions ", Logging.INFO);
+			for(Transaction t : conflictingTransactions) {
+				Logging.getInstance()
+				.log("Transaction "
+						+ t.getTransactionId()
+						+ " has a conflict", Logging.INFO);
+			}
 			// order the conflicting transactions by accept stamp and specify
 			// execution context as CPU
 			Collections.sort(conflictingTransactions,
@@ -141,18 +175,11 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 			// Estimate when these transactions are likely to complete
 			Double timeEstimate = getEstimateForTransactions(
 					conflictingTransactions);
+			Logging.getInstance().log("Conflicting transactions will finish in " + timeEstimate, Logging.INFO);
 			// Enqueue a epoch start event with the remaining transactions
 			List<Transaction> nonConflictingTransactions = new ArrayList<>();
-			// List<Transaction> conflictingOLAPTransactions = new
-			// ArrayList<>();
 			for (Transaction t : transactionList) {
 				if (!conflictingTransactions.contains(t)) {
-					// if (map.get(t)) {
-					// conflictingOLAPTransactions.add(t);
-					// }
-					// else {
-					// nonConflictingTransactions.add(t);
-					// }
 					nonConflictingTransactions.add(t);
 				}
 			}
@@ -161,11 +188,6 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 					Simulation.getInstance().getTime() + timeEstimate,
 					nonConflictingTransactions, -1);
 			EventQueue.getInstance().enqueueEvent(ev1);
-
-			// EpochStartEvent ev2 = new EpochStartEvent(
-			// Simulation.getInstance().getTime() + timeEstimate,
-			// conflictingOLAPTransactions, -1);
-			// EventQueue.getInstance().enqueueEvent(ev2);
 		}
 		return executionContexts;
 	}
@@ -174,11 +196,6 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 			List<Transaction> allTransactions) {
 
 		List<Transaction> oltpConflicts = new ArrayList<Transaction>();
-		// map = new HashMap<>();
-		// for (Transaction txn : allTransactions) {
-		// if (txn.isOlap())
-		// map.put(txn, false);
-		// }
 
 		for (Transaction txn : allTransactions) {
 			boolean conflict = false;
@@ -208,7 +225,6 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 		}
 		return oltpConflicts;
 	}
-
 
 	private Double getEstimateForTransactions(
 			List<Transaction> conflictingTransactions) {
@@ -241,7 +257,7 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 			for (int i = 0; i < max_threads; i++) {
 				if (i < tempTransactions.size()) {
 					max_time = Math.max(max_time,
-						tempTransactions.get(i).getCPUExecutionTime());
+							tempTransactions.get(i).getCPUExecutionTime());
 					tempTransactions.remove(i);
 				}
 			}

@@ -29,6 +29,11 @@ public class Tuple {
 	public String getTableName() {
 		return mTableName;
 	}
+	
+	@Override
+	public String toString() {
+		return mTableName + ":" + Integer.toString(mId);
+	}
 
 	/**
 	 * Get ID of this tuple wrt. primary key of the table
