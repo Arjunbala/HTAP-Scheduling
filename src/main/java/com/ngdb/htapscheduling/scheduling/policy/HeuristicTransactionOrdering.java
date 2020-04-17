@@ -83,8 +83,8 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 					}
 				}
 				scores.remove(transWithMaxScore);
-				Integer gpuWithMinAssignment = 0;
-				Double gpuWithMinAssignmentTime = 0.0;
+				Integer gpuWithMinAssignment = -1;
+				Double gpuWithMinAssignmentTime = Double.MAX_VALUE;
 				for (Integer gpuID : gpuExecutionList.keySet()) {
 					if (Double.compare(
 							getGPUEstimateForTransactions(
