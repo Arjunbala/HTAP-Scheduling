@@ -298,32 +298,51 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 	private Map<Transaction, Map<Integer, Double>> computeScores(
 			List<Transaction> transactions) {
 		Map<Transaction, Map<Integer, Double>> scores = new HashMap<>();
+		Map<Transaction, List<Double>> transaction_metadata = new HashMap<>();
+		double max_exec_ratio = 0;
+		double max_pcie_overhead = 0;
+		for (Transaction transaction : transactions) {
+			transaction_metadata.put(transaction, new ArrayList<Double>());
+			List<Double> gpu_metadata = new ArrayList<Double>(); 
+			double temp = transaction.getCPUExecutionTime()/ transaction.getGPURunningTime();
+			if (temp > max_exec_ratio)
+				max_exec_ratio = temp;
+			for (int gpuID = 0; gpuID < Simulation.getInstance().getCluster()
+					.getNumGPUSlots(); gpuID++) {
+				Double dataToBeTransferred = 0.0;
+				for (Tuple t : transaction.getReadSet()) {
+					if (!Simulation.getInstance().getCluster()
+							.doesGPUHaveLatestTupleVersion(gpuID, t,
+								Simulation.getInstance().getCluster()
+										.latestTupleVersion(t))) {
+						dataToBeTransferred += t.getMemory();
+					}
+				}
+				double temp2 = PCIeUtils.getHostToDeviceTransferTime(dataToBeTransferred)
+                                                + PCIeUtils.getDeviceToHostTransferTime(
+                                                                transaction.getOutputSize());
+				if (temp2 > max_pcie_overhead)
+					max_pcie_overhead = temp2;
+				gpu_metadata.add(temp2);
+			}
+			transaction_metadata.get(transaction).add(temp);
+			for (Double gpu_overheads : gpu_metadata) 
+				transaction_metadata.get(transaction).add(gpu_overheads);
+		}
+
 		for (Transaction t : transactions) {
 			scores.put(t, new HashMap<>());
 			for (int i = 0; i < Simulation.getInstance().getCluster()
 					.getNumGPUSlots(); i++) {
-				scores.get(t).put(i, computeScore(t, i));
+				scores.get(t).put(i, computeScore(transaction_metadata.get(t), i, max_exec_ratio, max_pcie_overhead));
 			}
 		}
 		return scores;
 	}
 
-	private Double computeScore(Transaction transaction, Integer gpuID) {
-		Double dataToBeTransferred = 0.0;
-		for (Tuple t : transaction.getReadSet()) {
-			if (!Simulation.getInstance().getCluster()
-					.doesGPUHaveLatestTupleVersion(gpuID, t,
-							Simulation.getInstance().getCluster()
-									.latestTupleVersion(t))) {
-				dataToBeTransferred += t.getMemory();
-			}
-		}
-		return alpha * (transaction.getCPUExecutionTime()
-				/ transaction.getGPURunningTime()) / 16.327
-				+ (1 - alpha) * (1- (PCIeUtils
-						.getHostToDeviceTransferTime(dataToBeTransferred)
-						+ PCIeUtils.getDeviceToHostTransferTime(
-								transaction.getOutputSize())))/ 18.07;
+	private Double computeScore(List<Double> transaction_metadata, Integer gpuID, Double maxExecRatio, Double maxPCIeOverhead) {
+		return alpha * (transaction_metadata.get(0)) / maxExecRatio
+				+ (1 - alpha) * (1- (transaction_metadata.get(gpuID+1))/maxPCIeOverhead);
 	}
 }
 
