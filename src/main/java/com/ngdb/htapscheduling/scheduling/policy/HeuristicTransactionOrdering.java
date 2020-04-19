@@ -301,12 +301,16 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 		Map<Transaction, List<Double>> transaction_metadata = new HashMap<>();
 		double max_exec_ratio = 0;
 		double max_pcie_overhead = 0;
+		double min_exec_ratio = 1000;
+		double min_pcie_overhead = 1000;
 		for (Transaction transaction : transactions) {
 			transaction_metadata.put(transaction, new ArrayList<Double>());
 			List<Double> gpu_metadata = new ArrayList<Double>(); 
 			double temp = transaction.getCPUExecutionTime()/ transaction.getGPURunningTime();
 			if (temp > max_exec_ratio)
 				max_exec_ratio = temp;
+			if (temp < min_exec_ratio)
+				min_exec_ratio = temp;
 			for (int gpuID = 0; gpuID < Simulation.getInstance().getCluster()
 					.getNumGPUSlots(); gpuID++) {
 				Double dataToBeTransferred = 0.0;
@@ -323,6 +327,8 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
                                                                 transaction.getOutputSize());
 				if (temp2 > max_pcie_overhead)
 					max_pcie_overhead = temp2;
+				if (temp2 < min_pcie_overhead)
+					min_pcie_overhead = temp2;
 				gpu_metadata.add(temp2);
 			}
 			transaction_metadata.get(transaction).add(temp);
@@ -334,15 +340,29 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 			scores.put(t, new HashMap<>());
 			for (int i = 0; i < Simulation.getInstance().getCluster()
 					.getNumGPUSlots(); i++) {
-				scores.get(t).put(i, computeScore(transaction_metadata.get(t), i, max_exec_ratio, max_pcie_overhead));
+				scores.get(t).put(i, computeScore(transaction_metadata.get(t), i, max_exec_ratio, max_pcie_overhead, min_exec_ratio, min_pcie_overhead));
 			}
 		}
 		return scores;
 	}
 
-	private Double computeScore(List<Double> transaction_metadata, Integer gpuID, Double maxExecRatio, Double maxPCIeOverhead) {
-		return alpha * (transaction_metadata.get(0)) / maxExecRatio
-				+ (1 - alpha) * (1- (transaction_metadata.get(gpuID+1))/maxPCIeOverhead);
+	private Double computeScore(List<Double> transaction_metadata, Integer gpuID, Double maxExecRatio, Double maxPCIeOverhead, Double minExecRatio, Double minPCIeOverhead) {
+		double exec_time_component;
+		double pcie_component;
+		if ((maxExecRatio-minExecRatio == 0.0)) {
+			exec_time_component = 0;
+		}
+		else {
+			exec_time_component = (transaction_metadata.get(0)-minExecRatio) / (maxExecRatio-minExecRatio);
+		}
+		if ((maxPCIeOverhead - minPCIeOverhead == 0.0)){
+			pcie_component = 1;
+		}
+		else {
+			pcie_component = (transaction_metadata.get(gpuID+1)-minPCIeOverhead)/(maxPCIeOverhead-minPCIeOverhead);
+		}
+
+		return alpha * exec_time_component + (1 - alpha) * (1-pcie_component);
 	}
 }
 
