@@ -1,5 +1,6 @@
 package com.ngdb.htapscheduling.events;
 
+import com.ngdb.htapscheduling.Logging;
 import com.ngdb.htapscheduling.database.Location;
 import com.ngdb.htapscheduling.database.Transaction;
 import com.ngdb.htapscheduling.scheduling.TransactionScheduler;
@@ -22,7 +23,16 @@ public class TransactionEndEvent extends Event {
 	
 	@Override
 	public void handleEvent() {
-		// TODO: Record metrics
+		//Record metrics
+		Logging.getInstance()
+				.log("Transaction " + transaction.getTransactionId() + " has start time of " + startTime + " running on " + location,
+						Logging.METRICS);
+		Logging.getInstance()
+				.log("Transaction " + transaction.getTransactionId() + " has end time of " + endTime + " ran on " + location,
+						Logging.METRICS);
+		Logging.getInstance()
+				.log("Transaction " + transaction.getTransactionId() + " duration " + Double.toString(endTime - startTime),
+						Logging.METRICS);
 		super.handleEvent();
 		TransactionScheduler.getInstance().endTransaction(transaction, location);
 	}

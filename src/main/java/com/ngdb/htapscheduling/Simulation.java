@@ -3,12 +3,14 @@ package com.ngdb.htapscheduling;
 import org.json.simple.JSONObject;
 import java.util.List;
 
+import com.ngdb.htapscheduling.Logging;
 import com.ngdb.htapscheduling.cluster.Cluster;
 import com.ngdb.htapscheduling.config.ConfigUtils;
 import com.ngdb.htapscheduling.database.Transaction;
 import com.ngdb.htapscheduling.database.Tuple;
 import com.ngdb.htapscheduling.events.EventQueue;
 import com.ngdb.htapscheduling.scheduling.GlobalScheduler;
+import com.ngdb.htapscheduling.scheduling.TransactionExecutor;
 import com.ngdb.htapscheduling.scheduling.TransactionScheduler;
 import com.ngdb.htapscheduling.workload.Workload;
 import com.ngdb.htapscheduling.workload.WorkloadFactory;
@@ -19,6 +21,9 @@ public class Simulation {
 												// of simulation
 	private static Cluster cluster;
 	private Double mTimeMs; // Current simulation time
+
+	public Double TransactionStartTime; //start time for transactions
+	public Double TransactionEndTime; //End time for all transactions
 
 	public Simulation(JSONObject clusterConfig, JSONObject memMgmtConfig) {
 		mTimeMs = 0.0;
@@ -78,8 +83,24 @@ public class Simulation {
 		}
 		gs.printTransactionList();
 		gs.startExecution();
+		sInstance.TransactionStartTime = sInstance.getTime();
 		// Now epoch events have been created; we can start the event queue
 		EventQueue.getInstance().start();
+
+		sInstance.TransactionEndTime = sInstance.getTime();
+		//For metrics
+		Logging.getInstance()
+				.log("Transactions execution starting at " + sInstance.TransactionStartTime,
+						Logging.METRICS);
+		Logging.getInstance()
+				.log("Transactions execution ending at " + sInstance.TransactionEndTime,
+						Logging.METRICS);
+		Logging.getInstance()
+				.log("Total number of transactions ran on CPU: " + ts.getTransactionsOnCPU(),
+						Logging.METRICS);	
+		Logging.getInstance()
+				.log("Total number of transactions ran on GPU: " + ts.getTransactionsOnGPU(),
+						Logging.METRICS);					
 	}
 
 	public static Simulation getInstance() {

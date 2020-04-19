@@ -22,12 +22,20 @@ public class TransactionExecutor {
 	List<TupleContext> cpuReadLocks;
 	List<TupleContext> cpuWriteLocks;
 
+	//For metrics
+	Integer totalTransactionsOnCPU;
+	Integer totalTransactionsOnGPU;
+
 	public TransactionExecutor() {
 		numTransactionsUsingCPU = 0;
 		transactionCompletionTimeCPU = new HashMap<Transaction, Double>();
 		transactionCompletionTimeGPU = new HashMap<Integer, Double>();
 		cpuReadLocks = new ArrayList<TupleContext>();
 		cpuWriteLocks = new ArrayList<TupleContext>();
+
+		//For Metrics
+		totalTransactionsOnCPU = 0;
+		totalTransactionsOnGPU = 0;
 	}
 
 	/**
@@ -40,6 +48,7 @@ public class TransactionExecutor {
 	 */
 	public Integer startTransactionExecution(Transaction transaction,
 			Location location) {
+
 		if (location.getDevice().equals("cpu")) {
 			// Check if CPU is available
 			// TODO: Arbit policy -- revisit
@@ -53,6 +62,7 @@ public class TransactionExecutor {
 					return 3;
 				} else {
 					// Can execute on CPU
+					totalTransactionsOnCPU++;
 					updateReadAndWriteLocks(transaction, location, true);
 					numTransactionsUsingCPU++;
 					Double transEndTime = Simulation.getInstance().getTime();
@@ -117,6 +127,7 @@ public class TransactionExecutor {
 				transactionCompletionTimeGPU.put(location.getId(),
 						Simulation.getInstance().getTime()
 								+ transactionCompletionTime);
+				totalTransactionsOnGPU++;
 				return 0;
 			} else {
 				// GPU in use
@@ -330,5 +341,13 @@ public class TransactionExecutor {
 			Logging.getInstance().log("Write lock on " + tc.toString(),
 					Logging.DEBUG);
 		}
+	}
+
+	public Integer getTransactionsOnCPU(){
+		return totalTransactionsOnCPU;
+	}
+
+	public Integer getTransactionsOnGPU(){
+		return totalTransactionsOnGPU;
 	}
 }

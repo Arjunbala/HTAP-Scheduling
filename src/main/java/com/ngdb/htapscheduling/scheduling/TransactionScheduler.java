@@ -148,4 +148,12 @@ public class TransactionScheduler {
 				Logging.INFO);
 		executor.endTransactionExecution(transaction, location);
 	}
+
+	public Integer getTransactionsOnCPU(){
+		return executor.getTransactionsOnCPU();
+	}
+
+	public Integer getTransactionsOnGPU(){
+		return executor.getTransactionsOnGPU();
+	}
 }
