@@ -24,16 +24,16 @@ public class TransactionEndEvent extends Event {
 	@Override
 	public void handleEvent() {
 		//Record metrics
-		Logging.getInstance()
-				.log("Transaction " + transaction.getTransactionId() + " has start time of " + startTime + " running on " + location,
-						Logging.METRICS);
-		Logging.getInstance()
-				.log("Transaction " + transaction.getTransactionId() + " has end time of " + endTime + " ran on " + location,
-						Logging.METRICS);
-		Logging.getInstance()
-				.log("Transaction " + transaction.getTransactionId() + " duration " + Double.toString(endTime - startTime),
-						Logging.METRICS);
 		super.handleEvent();
+		Logging.getInstance()
+		.log("Transaction " + transaction.getTransactionId() + " has start time of " + transaction.getAcceptStamp() + " running on " + location,
+				Logging.METRICS);
+Logging.getInstance()
+		.log("Transaction " + transaction.getTransactionId() + " has end time of " + endTime + " ran on " + location,
+				Logging.METRICS);
+Logging.getInstance()
+		.log("Transaction " + transaction.getTransactionId() + " duration " + Double.toString(endTime - transaction.getAcceptStamp()),
+				Logging.METRICS);
 		TransactionScheduler.getInstance().endTransaction(transaction, location);
 	}
 }

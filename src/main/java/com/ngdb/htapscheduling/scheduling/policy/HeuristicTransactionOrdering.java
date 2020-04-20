@@ -111,6 +111,11 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 						.log("Transaction "
 								+ transWithMaxScore.getTransactionId()
 								+ " chose gpu " + gpuIdToUse, Logging.INFO);
+				Logging.getInstance().log(
+						"Speedup of GPU chosen transaction: "
+								+ transWithMaxScore.getCPUExecutionTime()
+										/ transWithMaxScore.getGPURunningTime(),
+						Logging.METRICS);
 				gpuExecutionList.get(gpuIdToUse).add(transWithMaxScore);
 				if (scores.size() == 0) {
 					// all assigned to GPU
@@ -141,7 +146,19 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 							new Location("gpu", i)));
 				}
 			}
-			for(Transaction t : scores.keySet()) {
+			Logging.getInstance()
+					.log("CPU transactions have total time estimate: "
+							+ getEstimateForTransactions(oltpTransactions),
+							Logging.METRICS);
+			for (int i = 0; i < Simulation.getInstance().getCluster()
+					.getNumGPUSlots(); i++) {
+				Logging.getInstance().log(
+						"GPU " + i + " has total time estimate: "
+								+ getGPUEstimateForTransactions(
+										gpuExecutionList.get(i)),
+						Logging.METRICS);
+			}
+			for (Transaction t : scores.keySet()) {
 				executionContexts.add(new TransactionExecutionContext(t,
 						new Location("cpu", 0)));
 			}
@@ -157,11 +174,10 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 								+ tec.getLocation().toString(), Logging.INFO);
 			}
 		} else {
-			Logging.getInstance().log("Logging conflicting transactions ", Logging.INFO);
-			for(Transaction t : conflictingTransactions) {
-				Logging.getInstance()
-				.log("Transaction "
-						+ t.getTransactionId()
+			Logging.getInstance().log("Logging conflicting transactions ",
+					Logging.INFO);
+			for (Transaction t : conflictingTransactions) {
+				Logging.getInstance().log("Transaction " + t.getTransactionId()
 						+ " has a conflict", Logging.INFO);
 			}
 			// order the conflicting transactions by accept stamp and specify
@@ -175,7 +191,9 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 			// Estimate when these transactions are likely to complete
 			Double timeEstimate = getEstimateForTransactions(
 					conflictingTransactions);
-			Logging.getInstance().log("Conflicting transactions will finish in " + timeEstimate, Logging.INFO);
+			Logging.getInstance().log(
+					"Conflicting transactions will finish in " + timeEstimate,
+					Logging.METRICS);
 			// Enqueue a epoch start event with the remaining transactions
 			List<Transaction> nonConflictingTransactions = new ArrayList<>();
 			for (Transaction t : transactionList) {
@@ -305,8 +323,9 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 		double min_pcie_overhead = 1000;
 		for (Transaction transaction : transactions) {
 			transaction_metadata.put(transaction, new ArrayList<Double>());
-			List<Double> gpu_metadata = new ArrayList<Double>(); 
-			double temp = transaction.getCPUExecutionTime()/ transaction.getGPURunningTime();
+			List<Double> gpu_metadata = new ArrayList<Double>();
+			double temp = transaction.getCPUExecutionTime()
+					/ transaction.getGPURunningTime();
 			if (temp > max_exec_ratio)
 				max_exec_ratio = temp;
 			if (temp < min_exec_ratio)
@@ -317,14 +336,15 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 				for (Tuple t : transaction.getReadSet()) {
 					if (!Simulation.getInstance().getCluster()
 							.doesGPUHaveLatestTupleVersion(gpuID, t,
-								Simulation.getInstance().getCluster()
-										.latestTupleVersion(t))) {
+									Simulation.getInstance().getCluster()
+											.latestTupleVersion(t))) {
 						dataToBeTransferred += t.getMemory();
 					}
 				}
-				double temp2 = PCIeUtils.getHostToDeviceTransferTime(dataToBeTransferred)
-                                                + PCIeUtils.getDeviceToHostTransferTime(
-                                                                transaction.getOutputSize());
+				double temp2 = PCIeUtils
+						.getHostToDeviceTransferTime(dataToBeTransferred)
+						+ PCIeUtils.getDeviceToHostTransferTime(
+								transaction.getOutputSize());
 				if (temp2 > max_pcie_overhead)
 					max_pcie_overhead = temp2;
 				if (temp2 < min_pcie_overhead)
@@ -332,7 +352,7 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 				gpu_metadata.add(temp2);
 			}
 			transaction_metadata.get(transaction).add(temp);
-			for (Double gpu_overheads : gpu_metadata) 
+			for (Double gpu_overheads : gpu_metadata)
 				transaction_metadata.get(transaction).add(gpu_overheads);
 		}
 
@@ -340,29 +360,34 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 			scores.put(t, new HashMap<>());
 			for (int i = 0; i < Simulation.getInstance().getCluster()
 					.getNumGPUSlots(); i++) {
-				scores.get(t).put(i, computeScore(transaction_metadata.get(t), i, max_exec_ratio, max_pcie_overhead, min_exec_ratio, min_pcie_overhead));
+				scores.get(t).put(i,
+						computeScore(transaction_metadata.get(t), i,
+								max_exec_ratio, max_pcie_overhead,
+								min_exec_ratio, min_pcie_overhead));
 			}
 		}
 		return scores;
 	}
 
-	private Double computeScore(List<Double> transaction_metadata, Integer gpuID, Double maxExecRatio, Double maxPCIeOverhead, Double minExecRatio, Double minPCIeOverhead) {
+	private Double computeScore(List<Double> transaction_metadata,
+			Integer gpuID, Double maxExecRatio, Double maxPCIeOverhead,
+			Double minExecRatio, Double minPCIeOverhead) {
 		double exec_time_component;
 		double pcie_component;
-		if ((maxExecRatio-minExecRatio == 0.0)) {
+		if ((maxExecRatio - minExecRatio == 0.0)) {
 			exec_time_component = 0;
+		} else {
+			exec_time_component = (transaction_metadata.get(0) - minExecRatio)
+					/ (maxExecRatio - minExecRatio);
 		}
-		else {
-			exec_time_component = (transaction_metadata.get(0)-minExecRatio) / (maxExecRatio-minExecRatio);
-		}
-		if ((maxPCIeOverhead - minPCIeOverhead == 0.0)){
+		if ((maxPCIeOverhead - minPCIeOverhead == 0.0)) {
 			pcie_component = 1;
-		}
-		else {
-			pcie_component = (transaction_metadata.get(gpuID+1)-minPCIeOverhead)/(maxPCIeOverhead-minPCIeOverhead);
+		} else {
+			pcie_component = (transaction_metadata.get(gpuID + 1)
+					- minPCIeOverhead) / (maxPCIeOverhead - minPCIeOverhead);
 		}
 
-		return alpha * exec_time_component + (1 - alpha) * (1-pcie_component);
+		return alpha * exec_time_component + (1 - alpha) * (1 - pcie_component);
 	}
 }
 

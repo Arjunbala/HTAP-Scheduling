@@ -3,6 +3,8 @@ package com.ngdb.htapscheduling.cluster.policy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import com.ngdb.htapscheduling.Logging;
 import com.ngdb.htapscheduling.cluster.WorkingSet;
 import com.ngdb.htapscheduling.database.Tuple;
 
@@ -23,6 +25,10 @@ public class RandomMemoryManagement implements MemoryManagement {
 			if (tupleList.get(tupleNumber).getEvictionBit()==false) {
 				if (transactionReadSet.indexOf(tupleList.get(tupleNumber)) == -1) {
 					evictTupleList.add(tupleList.get(tupleNumber));
+					Tuple t = tupleList.get(tupleNumber);
+					if(gpuWorkingSet.getTupleVersion(t) == cpuWorkingSet.getTupleVersion(t)) {
+						Logging.getInstance().log("Evicting tuple in current version ", Logging.METRICS);
+					}
 					tupleList.get(tupleNumber).setEvictionBit();
 					memoryNeeded -= tupleList.get(tupleNumber).getMemory();
 				}

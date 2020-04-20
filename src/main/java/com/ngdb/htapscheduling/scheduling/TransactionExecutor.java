@@ -22,20 +22,12 @@ public class TransactionExecutor {
 	List<TupleContext> cpuReadLocks;
 	List<TupleContext> cpuWriteLocks;
 
-	//For metrics
-	Integer totalTransactionsOnCPU;
-	Integer totalTransactionsOnGPU;
-
 	public TransactionExecutor() {
 		numTransactionsUsingCPU = 0;
 		transactionCompletionTimeCPU = new HashMap<Transaction, Double>();
 		transactionCompletionTimeGPU = new HashMap<Integer, Double>();
 		cpuReadLocks = new ArrayList<TupleContext>();
 		cpuWriteLocks = new ArrayList<TupleContext>();
-
-		//For Metrics
-		totalTransactionsOnCPU = 0;
-		totalTransactionsOnGPU = 0;
 	}
 
 	/**
@@ -62,7 +54,6 @@ public class TransactionExecutor {
 					return 3;
 				} else {
 					// Can execute on CPU
-					totalTransactionsOnCPU++;
 					updateReadAndWriteLocks(transaction, location, true);
 					numTransactionsUsingCPU++;
 					Double transEndTime = Simulation.getInstance().getTime();
@@ -114,6 +105,11 @@ public class TransactionExecutor {
 							.getLastAccessed()
 							.put(t, Simulation.getInstance().getTime());
 				}
+				Double pcieOverheads = PCIeUtils
+						.getDeviceToHostTransferTime(
+								transaction.getOutputSize())
+						+ PCIeUtils.getHostToDeviceTransferTime(
+								totalDataToTransferKb);
 				Double transactionCompletionTime = PCIeUtils
 						.getDeviceToHostTransferTime(
 								transaction.getOutputSize())
@@ -124,10 +120,11 @@ public class TransactionExecutor {
 						.log("Transaction " + transaction.getTransactionId()
 								+ " will complete in "
 								+ transactionCompletionTime, Logging.INFO);
+				Logging.getInstance().log("PCIe overhead incurred by transaction " + transaction.getTransactionId()
+				+ " : " + pcieOverheads, Logging.METRICS);
 				transactionCompletionTimeGPU.put(location.getId(),
 						Simulation.getInstance().getTime()
 								+ transactionCompletionTime);
-				totalTransactionsOnGPU++;
 				return 0;
 			} else {
 				// GPU in use
@@ -341,13 +338,5 @@ public class TransactionExecutor {
 			Logging.getInstance().log("Write lock on " + tc.toString(),
 					Logging.DEBUG);
 		}
-	}
-
-	public Integer getTransactionsOnCPU(){
-		return totalTransactionsOnCPU;
-	}
-
-	public Integer getTransactionsOnGPU(){
-		return totalTransactionsOnGPU;
 	}
 }

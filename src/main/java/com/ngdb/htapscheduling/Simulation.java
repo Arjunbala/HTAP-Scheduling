@@ -90,16 +90,7 @@ public class Simulation {
 		sInstance.TransactionEndTime = sInstance.getTime();
 		//For metrics
 		Logging.getInstance()
-				.log("Transactions execution starting at " + sInstance.TransactionStartTime,
-						Logging.METRICS);
-		Logging.getInstance()
-				.log("Transactions execution ending at " + sInstance.TransactionEndTime,
-						Logging.METRICS);
-		Logging.getInstance()
-				.log("Total number of transactions ran on CPU: " + ts.getTransactionsOnCPU(),
-						Logging.METRICS);	
-		Logging.getInstance()
-				.log("Total number of transactions ran on GPU: " + ts.getTransactionsOnGPU(),
+				.log("Makespan: " + sInstance.TransactionEndTime,
 						Logging.METRICS);					
 	}
 

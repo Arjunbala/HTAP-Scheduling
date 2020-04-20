@@ -116,6 +116,12 @@ public class TransactionScheduler {
 		if (status == 0) {
 			// successful, enqueue end transaction event
 			Double endTime = executor.getEndTime(transaction, location);
+			Logging.getInstance().log(
+					"Transaction " + transaction.getTransactionId()
+							+ " queuing delay: "
+							+ Double.toString(Simulation.getInstance().getTime()
+									- transaction.getAcceptStamp()),
+					Logging.METRICS);
 			EventQueue.getInstance()
 					.enqueueEvent(new TransactionEndEvent(
 							Simulation.getInstance().getTime(), endTime,
@@ -147,13 +153,5 @@ public class TransactionScheduler {
 				+ transaction.getTransactionId() + " on " + location.toString(),
 				Logging.INFO);
 		executor.endTransactionExecution(transaction, location);
-	}
-
-	public Integer getTransactionsOnCPU(){
-		return executor.getTransactionsOnCPU();
-	}
-
-	public Integer getTransactionsOnGPU(){
-		return executor.getTransactionsOnGPU();
 	}
 }

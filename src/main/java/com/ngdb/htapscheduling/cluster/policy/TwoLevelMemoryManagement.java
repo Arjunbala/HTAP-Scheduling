@@ -3,6 +3,8 @@ package com.ngdb.htapscheduling.cluster.policy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import com.ngdb.htapscheduling.Logging;
 import com.ngdb.htapscheduling.cluster.WorkingSet;
 import com.ngdb.htapscheduling.database.Tuple;
 
@@ -46,6 +48,7 @@ public class TwoLevelMemoryManagement implements MemoryManagement {
 		
 		if (memoryNeeded > 0) {			
 			while (memoryNeeded > 0) {
+				Logging.getInstance().log("Evicting tuple in current version ", Logging.METRICS);
 				int lowestTimeStampTupleIndex = getLowestTimeStamp(tupleList, 
 						gpuLastAccessed, transactionReadSet);
 				tupleList.get(lowestTimeStampTupleIndex).setEvictionBit();

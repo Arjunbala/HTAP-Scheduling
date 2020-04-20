@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import com.ngdb.htapscheduling.database.Tuple;
+import com.ngdb.htapscheduling.Logging;
+import com.ngdb.htapscheduling.Simulation;
 import com.ngdb.htapscheduling.cluster.WorkingSet;
 
 public class LRUMemoryManagement implements MemoryManagement {
@@ -46,6 +48,10 @@ public class LRUMemoryManagement implements MemoryManagement {
 			int lowestTimeStampTupleIndex = getLowestTimeStamp(tupleList, lastAccessed, transactionReadSet);
 			if (lowestTimeStampTupleIndex == -1) {
 				break;
+			}
+			Tuple t = tupleList.get(lowestTimeStampTupleIndex);
+			if(gpuWorkingSet.getTupleVersion(t) == cpuWorkingSet.getTupleVersion(t)) {
+				Logging.getInstance().log("Evicting tuple in current version ", Logging.METRICS);
 			}
 			tupleList.get(lowestTimeStampTupleIndex).setEvictionBit();
 			evictTupleList.add(tupleList.get(lowestTimeStampTupleIndex));
