@@ -172,7 +172,7 @@ public class SSB implements Workload {
 						num_write_tuples++;
 					}
 				}	
-				t.setmCPURunningTimeEstimateMs(0.0125*num_write_tuples + 3.2906);
+				t.setmCPURunningTimeEstimateMs(0.004*num_write_tuples + 0.9922);
 				transactions.add(t);
 			}
 		}
