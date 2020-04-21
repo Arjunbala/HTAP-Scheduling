@@ -20,7 +20,7 @@ public class SSB implements Workload {
 	private double tx0_prob;
 	private double tx1_prob;
 	private double tx2_prob;
-	private double read_prob;
+	//private double read_prob;
 	private int min_tuples_oltp;
 	private int max_tuples_oltp;
 
@@ -35,7 +35,7 @@ public class SSB implements Workload {
 		tx0_prob = Double.parseDouble(ConfigUtils.getAttributeValue(ssbConfig, "tx0_prob"));
 		tx1_prob = Double.parseDouble(ConfigUtils.getAttributeValue(ssbConfig, "tx1_prob"));
 		tx2_prob = Double.parseDouble(ConfigUtils.getAttributeValue(ssbConfig, "tx2_prob"));
-		read_prob = Double.parseDouble(ConfigUtils.getAttributeValue(ssbConfig, "read_prob"));
+		//read_prob = Double.parseDouble(ConfigUtils.getAttributeValue(ssbConfig, "read_prob"));
 
 		mTuples = new ArrayList<Tuple>();
 		for (int i=0; i<2556; i++)
@@ -154,25 +154,17 @@ public class SSB implements Workload {
 				transactions.add(t);
 			}
 			else { //OLTP
-				Transaction t = new Transaction(j+1, submissionTime, 1.0, 5.0, isOlap);
+				Transaction t = new Transaction(j+1, submissionTime, 1.0, 0.0, isOlap);
 				int num_tuples = rand.nextInt(max_tuples_oltp-min_tuples_oltp+1) + min_tuples_oltp;
 				int num_read_tuples = 0;
 				int num_write_tuples = 0;
 
 				for (int i=0; i<num_tuples; i++) {
-					double r3 = rand.nextDouble();
-					if (r3 < read_prob) {
-						int rand_read = rand.nextInt(total_tuples);
-						t.addToReadSet(mTuples.get(rand_read));
-						num_read_tuples++;
-					}
-					else {
-						int rand_write = rand.nextInt(total_tuples);
-						t.addToWriteSet(mTuples.get(rand_write));
-						num_write_tuples++;
-					}
+					int rand_read = rand.nextInt(total_tuples);
+					t.addToReadSet(mTuples.get(rand_read));
+					t.addToWriteSet(mTuples.get(rand_read));
 				}	
-				t.setmCPURunningTimeEstimateMs(0.0125*num_write_tuples + 3.2906);
+				t.setmCPURunningTimeEstimateMs(0.004*num_write_tuples + 0.9922);
 				transactions.add(t);
 			}
 		}
