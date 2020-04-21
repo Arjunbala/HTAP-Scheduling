@@ -116,7 +116,7 @@ public class TransactionExecutor {
 								totalDataToTransferKb)
 						+ transaction.getGPURunningTime();
 				updateReadAndWriteLocks(transaction, location, true,
-						transactionCompletionTime);
+						Simulation.getInstance().getTime() + transactionCompletionTime);
 				Logging.getInstance()
 						.log("Transaction " + transaction.getTransactionId()
 								+ " will complete in "
