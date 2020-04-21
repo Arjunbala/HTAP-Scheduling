@@ -70,8 +70,8 @@ public class TransactionExecutor {
 				for (Transaction t : transactionCompletionTimeCPU.keySet()) {
 					Logging.getInstance()
 							.log("Transaction " + t.getTransactionId()
-									+ " currently running on " + location.toString(),
-									Logging.DEBUG);
+									+ " currently running on "
+									+ location.toString(), Logging.DEBUG);
 				}
 				return 1;
 			}
@@ -83,7 +83,7 @@ public class TransactionExecutor {
 					// there is a conflict
 					return 3;
 				}
-				updateReadAndWriteLocks(transaction, location, true);
+				// updateReadAndWriteLocks(transaction, location, true);
 				// check if all tuples in read set already reside on GPU
 				// If not, initiate a transfer
 				Double totalDataToTransferKb = 0.0;
@@ -105,9 +105,8 @@ public class TransactionExecutor {
 							.getLastAccessed()
 							.put(t, Simulation.getInstance().getTime());
 				}
-				Double pcieOverheads = PCIeUtils
-						.getDeviceToHostTransferTime(
-								transaction.getOutputSize())
+				Double pcieOverheads = PCIeUtils.getDeviceToHostTransferTime(
+						transaction.getOutputSize())
 						+ PCIeUtils.getHostToDeviceTransferTime(
 								totalDataToTransferKb);
 				Double transactionCompletionTime = PCIeUtils
@@ -116,20 +115,24 @@ public class TransactionExecutor {
 						+ PCIeUtils.getHostToDeviceTransferTime(
 								totalDataToTransferKb)
 						+ transaction.getGPURunningTime();
+				updateReadAndWriteLocks(transaction, location, true,
+						transactionCompletionTime);
 				Logging.getInstance()
 						.log("Transaction " + transaction.getTransactionId()
 								+ " will complete in "
 								+ transactionCompletionTime, Logging.INFO);
-				Logging.getInstance().log("PCIe overhead incurred by transaction " + transaction.getTransactionId()
-				+ " : " + pcieOverheads, Logging.METRICS);
+				Logging.getInstance()
+						.log("PCIe overhead incurred by transaction "
+								+ transaction.getTransactionId() + " : "
+								+ pcieOverheads, Logging.METRICS);
 				transactionCompletionTimeGPU.put(location.getId(),
 						Simulation.getInstance().getTime()
 								+ transactionCompletionTime);
 				return 0;
 			} else {
 				// GPU in use
-				Logging.getInstance()
-				.log("Transaction " + transactionCompletionTimeGPU.get(location.getId())
+				Logging.getInstance().log("Transaction "
+						+ transactionCompletionTimeGPU.get(location.getId())
 						+ " currently running on " + location.toString(),
 						Logging.DEBUG);
 				return 2;
@@ -264,6 +267,18 @@ public class TransactionExecutor {
 	}
 
 	private void updateReadAndWriteLocks(Transaction transaction,
+			Location location, boolean isInsert, Double completionTime) {
+		if (isInsert) {
+			handleInsertWithCompletionTime(transaction, location,
+					completionTime);
+			dumpLockInfo();
+		} else {
+			handleRemove(transaction, location);
+			dumpLockInfo();
+		}
+	}
+
+	private void updateReadAndWriteLocks(Transaction transaction,
 			Location location, boolean isInsert) {
 		if (isInsert) {
 			handleInsert(transaction, location);
@@ -271,6 +286,27 @@ public class TransactionExecutor {
 		} else {
 			handleRemove(transaction, location);
 			dumpLockInfo();
+		}
+	}
+
+	private void handleInsertWithCompletionTime(Transaction transaction,
+			Location location, Double completionTime) {
+		for (Tuple t : transaction.getReadSet()) {
+			boolean tupleAlreadyReadLocked = false;
+			for (TupleContext tc : cpuReadLocks) {
+				if (tc.getTuple().equals(t)) {
+					tupleAlreadyReadLocked = true;
+					tc.setReleaseTime(
+							Math.max(tc.getReleaseTime(), completionTime));
+				}
+			}
+			if (!tupleAlreadyReadLocked) {
+				cpuReadLocks
+						.add(new TupleContext(t, completionTime, transaction));
+			}
+		}
+		for (Tuple t : transaction.getWriteSet()) {
+			cpuWriteLocks.add(new TupleContext(t, completionTime, transaction));
 		}
 	}
 
