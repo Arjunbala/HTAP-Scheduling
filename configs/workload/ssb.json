@@ -1,9 +1,9 @@
 {
-    "workload_type": "test",
+    "workload_type": "ssb",
     "workload_config": {
-        "mRps": 3,
+        "mRps": 50,
         "mDurationSeconds": 1,
-        "olap_prob": 0.5,
+        "olap_prob": 0.25,
         "tx0_prob": 0.25,
         "tx1_prob": 0.25,
         "tx2_prob": 0.25,

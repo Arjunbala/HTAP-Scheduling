@@ -1,0 +1,8 @@
+{
+    "epochTime": 200.0,
+    "policy_type": "heuristic",
+    "policy_config": {
+        "alpha": 1.0,
+        "beta": 0.1
+    }
+}

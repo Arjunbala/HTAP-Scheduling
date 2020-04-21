@@ -37,7 +37,7 @@ public class GlobalScheduler {
 	}
 
 	private GlobalScheduler(Double epochTime) {
-		this.epochTime = epochTime;
+		this.epochTime = 200.0;
 		transactionList = new ArrayList<Transaction>();
 	}
 
