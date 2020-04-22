@@ -259,7 +259,7 @@ public class HeuristicTransactionOrdering implements TransactionOrdering {
 				Transaction txn_ = conflictingTransactions.get(i);
 				if (detect_conflict(txn, txn_)) {
 					oltpConflictingTransactions.add(txn);
-					tempTransactions.remove(txn_index);
+					tempTransactions.remove(txn);
 					break;
 				}
 			}
