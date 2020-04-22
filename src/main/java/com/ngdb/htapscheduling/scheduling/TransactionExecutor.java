@@ -99,6 +99,7 @@ public class TransactionExecutor {
 								t, location.getId(), transaction.getReadSet());
 					}
 				}
+				totalDataToTransferKb = totalDataToTransferKb*100;
 				for (Tuple t : transaction.getReadSet()) {
 					Simulation.getInstance().getCluster()
 							.getGPUWorkingSet(location.getId())

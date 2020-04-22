@@ -10,7 +10,7 @@ import com.ngdb.htapscheduling.config.ConfigUtils;
 import com.ngdb.htapscheduling.database.Transaction;
 import com.ngdb.htapscheduling.database.Tuple;
 
-public class SSB implements Workload {
+public class SSB_old implements Workload {
 
 	List<Tuple> mTuples;
 	List<Transaction> transactions;
@@ -24,7 +24,7 @@ public class SSB implements Workload {
 	private int min_tuples_oltp;
 	private int max_tuples_oltp;
 
-	public SSB(JSONObject config) {
+	public SSB_old(JSONObject config) {
 		JSONObject ssbConfig = ConfigUtils.getJsonValue(config,	"workload_config");
 
 		mRps = Integer.parseInt(ConfigUtils.getAttributeValue(ssbConfig, "mRps"));
@@ -38,19 +38,19 @@ public class SSB implements Workload {
 		//read_prob = Double.parseDouble(ConfigUtils.getAttributeValue(ssbConfig, "read_prob"));
 
 		mTuples = new ArrayList<Tuple>();
-		for (int i=0; i<255; i++)
+		for (int i=0; i<2556; i++)
 			mTuples.add(new Tuple("date", i+1, 115.0, 17)); //17*9=119
 
-		for (int i=0; i<200; i++)
+		for (int i=0; i<2000; i++)
 			mTuples.add(new Tuple("supplier", i+1, 139.0, 7));//140
 
-		for (int i=0; i<3000; i++)
+		for (int i=0; i<30000; i++)
 			mTuples.add(new Tuple("customer", i+1, 123.0, 8));//120
 		
-		for (int i=0; i<5000; i++)
+		for (int i=0; i<200000; i++)
 			mTuples.add(new Tuple("part", i+1, 113.0, 9)); //117
 		
-		for (int i=0; i<60012; i++)
+		for (int i=0; i<6001215; i++)
 			mTuples.add(new Tuple("lineorder", i+1, 107.0, 17)); //17*6=102
 		
 		transactions = new ArrayList<Transaction>();
@@ -66,11 +66,11 @@ public class SSB implements Workload {
 		int totalReqs = (int) (mRps*mDurationSeconds);
 		int inter_arrival_time_ms = (int)(1000.0/mRps);
 		Random rand = new Random(0);
-		int supp_offset = 255;
-		int cust_offset = 255+200;
-		int part_offset = 255+200+3000;
-		int lo_offset = 255+200+3000+5000;
-		int total_tuples = 255+200+3000+5000+60012;
+		int supp_offset = 2556;
+		int cust_offset = 2556+2000;
+		int part_offset = 2556+2000+30000;
+		int lo_offset = 2556+2000+30000+200000;
+		int total_tuples = 2556+2000+30000+200000+6001215;
 	
 		for (int j=0; j<totalReqs; j++) {
 			double submissionTime = (double)j*inter_arrival_time_ms*1.0;
@@ -94,9 +94,9 @@ public class SSB implements Workload {
 					tx_type = 3;
 
 				if (tx_type==0) {
-					for (int i=0;i<255;i++) //adding 'date' table
+					for (int i=0;i<2556;i++) //adding 'date' table
 						t.addToReadSet(mTuples.get(i));
-					for (int i=0;i<1145;i++) //adding 'lineorder' table
+					for (int i=0;i<114550;i++) //adding 'lineorder' table
 						t.addToReadSet(mTuples.get(lo_offset+i));
 					t.setOutputSize(1*11/1024.0);
 					t.setmCPURunningTimeEstimateMs(8828.0);	
@@ -104,13 +104,13 @@ public class SSB implements Workload {
 				
 				}
 				else if (tx_type==1) {
-					for (int i=0;i<255;i++) //adding 'date' table
+					for (int i=0;i<2556;i++) //adding 'date' table
 						t.addToReadSet(mTuples.get(i));
-					for (int i=0;i<200;i++) //adding 'supplier' table
+					for (int i=0;i<2000;i++) //adding 'supplier' table
 						t.addToReadSet(mTuples.get(supp_offset+i));
-					for (int i=0;i<355;i++) //adding 'part' table
+					for (int i=0;i<14186;i++) //adding 'part' table
 						t.addToReadSet(mTuples.get(part_offset+i));
-					for (int i=0;i<4255;i++) //adding 'lineorder' table
+					for (int i=0;i<425580;i++) //adding 'lineorder' table
 						t.addToReadSet(mTuples.get(lo_offset+i));
 					t.setOutputSize(280*32/1024.0);
 					t.setmCPURunningTimeEstimateMs(3690.0);	
@@ -118,13 +118,13 @@ public class SSB implements Workload {
 				
 				}
 				else if (tx_type==2) {
-					for (int i=0;i<255;i++) //adding 'date' table
+					for (int i=0;i<2556;i++) //adding 'date' table
 						t.addToReadSet(mTuples.get(i));
-					for (int i=0;i<200;i++) //adding 'supplier' table
+					for (int i=0;i<2000;i++) //adding 'supplier' table
 						t.addToReadSet(mTuples.get(supp_offset+i));
-					for (int i=0;i<3000;i++) //adding 'customer' table
+					for (int i=0;i<30000;i++) //adding 'customer' table
 						t.addToReadSet(mTuples.get(cust_offset+i));
-					for (int i=0;i<13474;i++) //adding 'lineorder' table
+					for (int i=0;i<1347435;i++) //adding 'lineorder' table
 						t.addToReadSet(mTuples.get(lo_offset+i));
 					t.setOutputSize(150*47/1024.0);
 					t.setmCPURunningTimeEstimateMs(22108.0);	
@@ -132,15 +132,15 @@ public class SSB implements Workload {
 				
 				}
 				else if (tx_type==3) {
-					for (int i=0;i<255;i++) //adding 'date' table
+					for (int i=0;i<2556;i++) //adding 'date' table
 						t.addToReadSet(mTuples.get(i));
-					for (int i=0;i<200;i++) //adding 'supplier' table
+					for (int i=0;i<2000;i++) //adding 'supplier' table
 						t.addToReadSet(mTuples.get(supp_offset+i));
-					for (int i=0;i<3000;i++) //adding 'customer' table
+					for (int i=0;i<30000;i++) //adding 'customer' table
 						t.addToReadSet(mTuples.get(cust_offset+i));
-					for (int i=0;i<5000;i++) //adding 'part' table
+					for (int i=0;i<200000;i++) //adding 'part' table
 						t.addToReadSet(mTuples.get(part_offset+i));
-					for (int i=0;i<11335;i++) //adding 'lineorder' table
+					for (int i=0;i<1133502;i++) //adding 'lineorder' table
 						t.addToReadSet(mTuples.get(lo_offset+i));
 					t.setOutputSize(35*32/1024.0);
 					t.setmCPURunningTimeEstimateMs(20978.0);	
